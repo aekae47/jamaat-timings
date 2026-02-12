@@ -229,7 +229,7 @@
         function openMosqueModal(id = null) { 
             document.getElementById('mosqueInfoModal').classList.remove('hidden'); 
             const isEdit = id !== null; 
-            document.getElementById('mosqueModalTitleText').innerText = isEdit ? 'Edit Mosque' : 'Add Mosque'; 
+            document.getElementById('mosqueModalTitle').innerText = isEdit ? 'Edit Mosque' : 'Add Mosque'; 
             document.getElementById('editMosqueId').value = id || ''; 
             
             // Delete Button Handling
@@ -259,12 +259,16 @@
                         else chip.classList.remove('active');
                     });
                 }
-            } else { 
-                document.getElementById('m_name').value = 'Masjid-e-'; 
-                document.getElementById('m_area').value = ''; 
-                document.getElementById('m_link').value = ''; 
-                document.getElementById('m_notes').value = ''; 
-            } 
+            } else {
+    const nameInput = document.getElementById('m_name');
+    nameInput.value = 'Masjid-e-';
+    nameInput.focus();
+    nameInput.setSelectionRange(nameInput.value.length, nameInput.value.length);
+
+    document.getElementById('m_area').value = '';
+    document.getElementById('m_link').value = '';
+    document.getElementById('m_notes').value = '';
+}
         }
 
         async function saveMosqueInfo() { 
