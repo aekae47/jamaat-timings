@@ -7,7 +7,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;600;700;800&family=Playfair+Display:wght@700&family=Google+Sans+Code:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Playfair+Display:wght@700&family=Source+Code+Pro:wght@600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -23,9 +23,9 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Google Sans', 'sans-serif'],
+                        sans: ['Montserrat', 'sans-serif'],
                         serif: ['Playfair Display', 'serif'],
-                        mono: ['Google Sans Code', 'monospace'],
+                        mono: ['Source Code Pro', 'monospace'],
                     },
                     colors: {
                         brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' }
@@ -41,7 +41,6 @@
         .animate-card { animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; transform: translateY(10px); }
         @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
         
-        /* Toggle Switch */
         .toggle-checkbox:checked { right: 0; border-color: #0d9488; }
         .toggle-checkbox:checked + .toggle-label { background-color: #0d9488; }
         .toggle-label { width: 36px; height: 20px; background-color: #e5e7eb; transition: 0.2s; }
@@ -88,8 +87,7 @@
                 </button>
             </div>
         </div>
-        
-        <button onclick="emergencyReset()" class="text-[10px] text-gray-300 hover:text-red-400 text-center pb-2 transition-colors">Reset Database</button>
+        <button onclick="hardReset()" class="text-[10px] text-gray-300 hover:text-red-400 text-center pb-2 transition-colors">Reset Database</button>
     </div>
 
     <div class="fixed top-0 w-full z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-gray-700 transition-all duration-300" id="mainHeader">
@@ -104,7 +102,7 @@
         <div id="searchContainer" class="hidden px-4 pb-2">
             <div class="relative">
                 <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
-                <input type="text" id="searchInput" onkeyup="handleSearch()" placeholder="Search name, area, time..." class="w-full bg-gray-100 dark:bg-gray-700/50 border-none rounded-lg py-2 pl-9 pr-4 text-xs font-bold outline-none dark:text-white">
+                <input type="text" id="searchInput" onkeyup="handleSearch()" placeholder="Search..." class="w-full bg-gray-100 dark:bg-gray-700/50 border-none rounded-lg py-2 pl-9 pr-4 text-xs font-bold outline-none dark:text-white">
             </div>
         </div>
 
@@ -116,8 +114,8 @@
     <div class="pt-[110px] pb-24 max-w-md mx-auto min-h-screen px-3" id="mainContainer">
         <div class="text-center mt-32 text-gray-400 flex flex-col items-center">
             <i class="fas fa-circle-notch fa-spin text-2xl mb-3 text-brand-300"></i>
-            <p class="text-xs font-bold uppercase tracking-widest opacity-50" id="loadingMsg">Loading...</p>
-            <button id="btnFixStuck" onclick="emergencyReset()" class="hidden mt-8 bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-lg animate-bounce">
+            <p class="text-xs font-bold uppercase tracking-widest opacity-50" id="loadingMsg">Starting...</p>
+            <button id="btnFixStuck" onclick="hardReset()" class="hidden mt-8 bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-lg animate-bounce">
                 ⚠️ Stuck? Click to Fix
             </button>
         </div>
@@ -128,14 +126,8 @@
     </button>
 
     <div class="fixed bottom-0 w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 p-2 flex justify-around z-40 pb-4">
-        <button onclick="setViewMode('next')" class="nav-btn w-16 group flex flex-col items-center justify-center" id="nav_next">
-            <i class="fas fa-clock text-lg mb-1"></i>
-            <span class="text-[10px] font-bold">Prayer</span>
-        </button>
-        <button onclick="setViewMode('list')" class="nav-btn w-16 group flex flex-col items-center justify-center" id="nav_list">
-            <i class="fas fa-mosque text-lg mb-1"></i>
-            <span class="text-[10px] font-bold">Mosques</span>
-        </button>
+        <button onclick="setViewMode('next')" class="nav-btn w-16 group flex flex-col items-center justify-center" id="nav_next"><i class="fas fa-clock text-lg mb-1"></i><span class="text-[10px] font-bold">Prayer</span></button>
+        <button onclick="setViewMode('list')" class="nav-btn w-16 group flex flex-col items-center justify-center" id="nav_list"><i class="fas fa-mosque text-lg mb-1"></i><span class="text-[10px] font-bold">Mosques</span></button>
     </div>
 
     <div id="pinModal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -219,9 +211,12 @@
     <script>
         const firebaseConfig = { apiKey: "AIzaSyAEzXz42Zih7M6yY97_4e8_E1BNsjbJhnI", authDomain: "timings-ak.firebaseapp.com", projectId: "timings-ak", storageBucket: "timings-ak.firebasestorage.app", messagingSenderId: "1082790063422", appId: "1:1082790063422:web:be439e3d932475a9fe906f" };
         firebase.initializeApp(firebaseConfig);
+        
+        // DISABLE OFFLINE PERSISTENCE (Crucial for mobile web connection stability)
         const db = firebase.firestore();
+        // db.settings({ experimentalForceLongPolling: true }); // Removed to let auto-detect work
+
         const auth = firebase.auth();
-        db.settings({ experimentalForceLongPolling: true, merge: true });
 
         // CSS
         const inputClass = "w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl text-sm font-bold text-gray-700 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 transition-all";
@@ -241,7 +236,11 @@
             if(appSettings.theme === 'dark') document.documentElement.classList.add('dark');
             document.getElementById('theme_toggle').checked = appSettings.theme === 'dark';
             updateLockUI(); updateSidebarToggles(); updateClock(); setInterval(updateClock, 1000);
-            setTimeout(() => { if(mosques.length === 0) document.getElementById('btnFixStuck').classList.remove('hidden'); }, 6000);
+            
+            // Failsafe for stuck loading
+            setTimeout(() => { if(mosques.length === 0) document.getElementById('btnFixStuck').classList.remove('hidden'); }, 5000);
+
+            // ANONYMOUS AUTH REMOVED - Direct Connection
             loadData();
             
             let lastScroll = 0;
@@ -255,19 +254,42 @@
         }
 
         function loadData() {
+            // Using default settings - no Auth check wrapper
             db.collection('mosques').onSnapshot(async (snapshot) => {
                 if (snapshot.empty) renderApp();
                 else {
-                    mosques = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    mosques.forEach(m => { if(!m.timings) m.timings={}; if(!m.lists) m.lists=['Favorites']; m.lists.forEach(l => allLists.add(l)); });
+                    mosques = snapshot.docs.map(doc => {
+                        // SANITIZE DATA
+                        const d = doc.data();
+                        return {
+                            id: doc.id,
+                            name: d.name || "Unknown",
+                            area: d.area || "",
+                            lists: d.lists || ['Favorites'],
+                            timings: d.timings || {},
+                            order: d.order || 0,
+                            address: d.address || "",
+                            locationLink: d.locationLink || ""
+                        };
+                    });
+                    
+                    // Extract Lists
+                    mosques.forEach(m => {
+                        m.lists.forEach(l => allLists.add(l));
+                    });
+                    
                     mosques.sort((a, b) => (a.order || 0) - (b.order || 0));
                     document.getElementById('btnFixStuck').classList.add('hidden');
                     renderApp();
                 }
+            }, (error) => {
+                console.error("Snapshot Error:", error);
+                document.getElementById('loadingMsg').innerText = "Connection Error";
+                document.getElementById('btnFixStuck').classList.remove('hidden');
             });
         }
 
-        // --- AUTH ---
+        // --- AUTH & PIN ---
         function checkAuth(callback) { if (isAdmin) callback(); else { pendingAuthCallback = callback; document.getElementById('pinInput').value = ''; document.getElementById('pinModal').classList.remove('hidden'); document.getElementById('pinInput').focus(); } }
         function validatePin() { if (document.getElementById('pinInput').value === '2613') { isAdmin = true; localStorage.setItem('isAdmin', 'true'); closeModal('pinModal'); updateLockUI(); if (pendingAuthCallback) pendingAuthCallback(); pendingAuthCallback = null; } else { alert("Incorrect PIN"); document.getElementById('pinInput').value = ''; } }
         function manualLock() { isAdmin = false; localStorage.setItem('isAdmin', 'false'); updateLockUI(); toggleSidebar(); }
@@ -362,11 +384,10 @@
                 </div>`;
         }
 
-        // --- UTILS ---
+        // --- UTILS & HELPERS ---
         function renderListBar() { const listsToShow = ['Favorites', 'All', ...Array.from(allLists).filter(l => l!=='Favorites')]; document.getElementById('listBar').innerHTML = listsToShow.map(list => `<button onclick="switchList('${list}')" class="px-3 py-1.5 rounded-full text-[10px] font-bold transition-all whitespace-nowrap border ${currentList === list ? 'bg-brand-600 text-white border-brand-600 shadow-md' : 'bg-white dark:bg-gray-700 text-gray-500 border-gray-200 dark:border-gray-600'}">${list}</button>`).join(''); }
         function switchList(name) { currentList = name; renderApp(); renderListBar(); }
-        // ... (Include same helper functions: openMosqueDetail, saveMosqueInfo, openMosqueModal, formatTime12, showToast, closeModal, setViewMode, updateNavState, toggleSidebar, toggleTheme, handleSearch, toggleMode, updateSidebarToggles, moveMosque, emergencyReset, deleteMosque, saveTimings, openEditTiming, createTimeRow, updateDisplayLayer, clearTimeInput, adjustTime, toggleSpecialPrayers, isTimeInRange, setupShareModal, openShareModal, generateShareImage) ...
-        
+        // ... (Include same helper functions from previous step: openMosqueDetail, saveMosqueInfo, openMosqueModal, formatTime12, showToast, closeModal, setViewMode, updateNavState, toggleSidebar, toggleTheme, handleSearch, toggleMode, updateSidebarToggles, moveMosque, deleteMosque, saveTimings, openEditTiming, createTimeRow, updateDisplayLayer, clearTimeInput, adjustTime, toggleSpecialPrayers, isTimeInRange, setupShareModal, openShareModal, generateShareImage) ...
         function formatTime12(time24) { if (!time24 || time24.trim() === '') return '--:--'; if (time24.includes('.')) return `${time24} <span class="text-[9px]">Parahs</span>`; const [h, m] = time24.split(':'); let hours = parseInt(h); const suffix = hours >= 12 ? 'PM' : 'AM'; hours = hours % 12 || 12; return `${hours}:${m}<span class="text-[10px] ml-0.5 font-normal text-gray-400">${suffix}</span>`; }
         function showToast() { const t = document.getElementById('toast'); t.classList.remove('opacity-0', 'translate-y-4'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-4'), 2000); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -379,7 +400,7 @@
         function updateSidebarToggles() { document.getElementById('mode_ramadan').checked = appSettings.ramadan; document.getElementById('mode_eidFitr').checked = appSettings.eidFitr; document.getElementById('mode_eidAdha').checked = appSettings.eidAdha; document.getElementById('mode_lateIsha').checked = appSettings.lateIsha; }
         
         async function moveMosque(id, dir) { const idx = mosques.findIndex(m => m.id === id); if (idx === -1) return; const targetIdx = idx + dir; if (targetIdx < 0 || targetIdx >= mosques.length) return; const m1 = mosques[idx], m2 = mosques[targetIdx]; let o1 = m1.order||0, o2 = m2.order||0; if(o1===o2) { o1=Date.now(); o2=o1+100; } m1.order=o2; m2.order=o1; mosques.sort((a,b)=>a.order-b.order); renderApp(); const b = db.batch(); b.update(db.collection('mosques').doc(m1.id),{order:m1.order}); b.update(db.collection('mosques').doc(m2.id),{order:m2.order}); await b.commit(); }
-        async function emergencyReset() { if(!confirm("Reset ALL data?")) return; document.getElementById('loadingMsg').innerText = "Reseting..."; const now = Date.now(); const dummy = [ { name: 'Masjid-e-Noor', area: 'Banjara Hills', lists: ['Favorites'], order: now, timings: { fajr:{time:'05:40'}, zuhr:{time:'13:15',fixed:true}, asr:{time:'16:45'}, isha:{time:'20:15',fixed:true}, jumma:{time:'13:45',fixed:true} } } ]; try { const qs = await db.collection('mosques').get(); const batch = db.batch(); qs.forEach(doc => batch.delete(doc.ref)); await batch.commit(); const seedBatch = db.batch(); dummy.forEach(m => seedBatch.set(db.collection('mosques').doc(), m)); await seedBatch.commit(); location.reload(); } catch(e) { alert("Reset Failed: "+e.message); } }
+        async function hardReset() { if(!confirm("Reset ALL data?")) return; document.getElementById('loadingMsg').innerText = "Reseting..."; const now = Date.now(); const dummy = [ { name: 'Masjid-e-Noor', area: 'Banjara Hills', lists: ['Favorites'], order: now, timings: { fajr:{time:'05:40'}, zuhr:{time:'13:15',fixed:true}, asr:{time:'16:45'}, isha:{time:'20:15',fixed:true}, jumma:{time:'13:45',fixed:true} } } ]; try { const qs = await db.collection('mosques').get(); const batch = db.batch(); qs.forEach(doc => batch.delete(doc.ref)); await batch.commit(); const seedBatch = db.batch(); dummy.forEach(m => seedBatch.set(db.collection('mosques').doc(), m)); await seedBatch.commit(); location.reload(); } catch(e) { alert("Reset Failed: "+e.message); } }
         async function deleteMosque() { const id = document.getElementById('editMosqueId').value; if(confirm("Delete?")) { closeModal('mosqueInfoModal'); mosques = mosques.filter(m => m.id !== id); renderApp(); await db.collection('mosques').doc(id).delete(); showToast(); } }
         async function saveTimings() { const m = mosques.find(x => x.id === editingTimingsId); if (!m) return; let updated = {...m.timings}; const nowStr = new Date().toISOString(); prayersList.forEach(p => { const el = document.getElementById(`input_${p.id}`); const fix = document.getElementById(`fix_${p.id}`); if(el) updated[p.id] = { time: el.value, fixed: fix.checked, lastUpdated: nowStr }; }); specialPrayersList.forEach(sp => { const el = document.getElementById(`input_${sp.id}`); if(el) updated[sp.id] = { time: el.value }; }); closeModal('editTimingModal'); m.timings = updated; renderApp(); await db.collection('mosques').doc(editingTimingsId).update({timings: updated}); showToast(); }
         function openEditTiming(id) { editingTimingsId = id; const m = mosques.find(x => x.id === id); document.getElementById('timingModalMosqueName').innerText = m.name; document.getElementById('timingEditorContainer').innerHTML = prayersList.map(p => createTimeRow(p.id, p.name, m.timings[p.id])).join(''); document.getElementById('specialPrayersContainer').innerHTML = specialPrayersList.map(sp => createTimeRow(sp.id, sp.name, m.timings[sp.id] || {time:''}, true, sp.type || 'time')).join(''); document.getElementById('specialPrayersContainer').classList.add('hidden'); document.getElementById('specialChevron').classList.remove('rotate-180'); document.getElementById('editTimingModal').classList.remove('hidden'); }
@@ -392,6 +413,20 @@
         function setupShareModal() { document.getElementById('sharePrayerSelectors').innerHTML = prayersList.map(p => `<label class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg border border-gray-100 dark:border-gray-600 cursor-pointer select-none"><input type="checkbox" value="${p.id}" checked class="accent-brand-600 w-3.5 h-3.5"> <span class="text-xs font-bold dark:text-gray-200">${p.name}</span></label>`).join(''); }
         function openShareModal() { const listMosques = mosques.filter(m => m.lists && m.lists.includes(currentList)); document.getElementById('shareMosqueSelectors').innerHTML = listMosques.map(m => `<label class="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-600 transition-colors"><input type="checkbox" value="${m.id}" checked class="w-4 h-4 accent-brand-600 rounded"><span class="text-sm font-bold dark:text-gray-200">${m.name}</span></label>`).join(''); document.getElementById('shareModal').classList.remove('hidden'); }
         async function generateShareImage() { const selectedPrayers = Array.from(document.querySelectorAll('#sharePrayerSelectors input:checked')).map(i => i.value); const selectedMosqueIds = Array.from(document.querySelectorAll('#shareMosqueSelectors input:checked')).map(i => i.value); const captureContent = document.getElementById('captureContent'); captureContent.innerHTML = ''; document.getElementById('captureDate').innerText = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); const table = document.createElement('table'); table.className = "w-full text-sm border-collapse"; let headerHTML = `<tr class="bg-brand-600 text-white"><th class="p-3 text-left rounded-tl-lg text-xs uppercase tracking-wider">Mosque</th>`; selectedPrayers.forEach((p, idx) => { const name = prayersList.find(x => x.id === p).name; headerHTML += `<th class="p-3 text-center text-xs ${idx === selectedPrayers.length - 1 ? 'rounded-tr-lg' : ''}">${name}</th>`; }); headerHTML += `</tr>`; let bodyHTML = ''; selectedMosqueIds.forEach((id, idx) => { const m = mosques.find(x => x.id === id); bodyHTML += `<tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} border-b border-gray-100">`; bodyHTML += `<td class="p-3 font-bold text-gray-700 text-xs">${m.name}</td>`; selectedPrayers.forEach(p => { const timeStr = m.timings[p]?.time ? formatTime12(m.timings[p].time).replace(/<[^>]*>/g, '') : '--:--'; bodyHTML += `<td class="p-3 text-center font-mono font-bold text-gray-800 text-xs">${timeStr}</td>`; }); bodyHTML += `</tr>`; }); table.innerHTML = headerHTML + bodyHTML; captureContent.appendChild(table); const captureArea = document.getElementById('captureArea'); captureArea.classList.remove('invisible'); captureArea.style.zIndex = "9999"; try { const canvas = await html2canvas(captureArea, { scale: 2 }); const link = document.createElement('a'); link.download = `Jamaat_Timings_${Date.now()}.png`; link.href = canvas.toDataURL(); link.click(); } catch (err) { console.error("Screenshot failed", err); } finally { captureArea.classList.add('invisible'); captureArea.style.zIndex = "-1"; closeModal('shareModal'); } }
+
+        // RESET
+        function emergencyReset() {
+            if(!confirm("Reset Database?")) return;
+            const now = Date.now();
+            const dummy = [{name: 'Masjid-e-Noor', area: 'City', lists:['Favorites'], order:now, timings:{fajr:{time:'05:30'},zuhr:{time:'13:15'},asr:{time:'16:45'},isha:{time:'20:15'},jumma:{time:'13:30'}}}];
+            db.collection('mosques').get().then(qs => {
+                const b = db.batch(); qs.forEach(doc=>b.delete(doc.ref));
+                b.commit().then(() => {
+                    const seed = db.batch(); dummy.forEach(m => seed.set(db.collection('mosques').doc(), m));
+                    seed.commit().then(() => location.reload());
+                });
+            });
+        }
 
         init();
     </script>
