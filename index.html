@@ -38,8 +38,8 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         body { -webkit-tap-highlight-color: transparent; }
-        .animate-card { animation: fadeIn 0.3s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-card { animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; transform: translateY(10px); }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
         
         .toggle-checkbox:checked { right: 0; border-color: #0d9488; }
         .toggle-checkbox:checked + .toggle-label { background-color: #0d9488; }
@@ -52,8 +52,9 @@
     <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-[60] hidden transition-opacity backdrop-blur-sm"></div>
     <div id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-white dark:bg-gray-800 shadow-2xl z-[70] transform -translate-x-full transition-transform duration-300 ease-in-out p-6 flex flex-col">
         <h2 class="text-2xl font-serif font-bold mb-1 text-brand-600 dark:text-brand-400">Settings</h2>
+        <p class="text-xs text-gray-400 mb-8 uppercase tracking-widest">Preferences</p>
         
-        <div class="space-y-6 flex-1 mt-6">
+        <div class="space-y-6 flex-1">
             <div class="flex items-center justify-between">
                 <span class="font-bold text-sm">Dark Mode</span>
                 <div class="relative inline-block w-10 align-middle select-none">
@@ -185,7 +186,7 @@
                     <input type="url" id="m_link" class="input-field text-xs" placeholder="https://maps.google...">
                 </div>
                 <div>
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Instructions</label>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Location Instructions</label>
                     <textarea id="m_notes" rows="2" class="input-field text-xs" placeholder="Notes or detailed location instructions"></textarea>
                 </div>
             </div>
@@ -264,7 +265,7 @@
                 if (snapshot.empty) renderApp();
                 else {
                     mosques = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    allLists = new Set(['Favorites', 'Home', 'Work']);
+                    allLists = new Set(['Favorites', 'Home', 'Work']); // Reset lists
                     mosques.forEach(m => {
                         if(!m.timings) m.timings={}; 
                         if(!m.lists) m.lists=['Favorites'];
@@ -467,7 +468,7 @@
         function clearTimeInput(key) { document.getElementById(`input_${key}`).value = ''; updateDisplayLayer(key); }
         function adjustTime(key, mins) { const input = document.getElementById(`input_${key}`); if (!input.value) return; const [h, m] = input.value.split(':').map(Number); const date = new Date(); date.setHours(h); date.setMinutes(m + mins); const newH = String(date.getHours()).padStart(2, '0'); const newM = String(date.getMinutes()).padStart(2, '0'); input.value = `${newH}:${newM}`; updateDisplayLayer(key); }
         function toggleSpecialPrayers() { document.getElementById('specialPrayersContainer').classList.toggle('hidden'); document.getElementById('specialChevron').classList.toggle('rotate-180'); }
-        function exportCSV() { if (!mosques.length) return alert("No data"); let csv = "Name,Area,Lists,Fajr,Zuhr,Asr,Isha,Jumma,Address\n"; mosques.forEach(m => { const t = m.timings; csv += [`"${m.name}"`, `"${m.area}"`, `"${m.lists.join('|')}"`, t.fajr?.time, t.zuhr?.time, t.asr?.time, t.isha?.time, t.jumma?.time, `"${(m.address||'').replace(/\n/g, ' ')}"`].join(",") + "\n"; }); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = "jamaat_backup_" + new Date().toISOString().slice(0,10) + ".csv"; link.click(); }
+        function isTimeInRange(target24, filter24) { if (!target24 || !filter24) return false; const tMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; }; return Math.abs(tMin(target24) - tMin(filter24)) <= 15; }
         function setupShareModal() { document.getElementById('sharePrayerSelectors').innerHTML = prayersList.map(p => `<label class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg border border-gray-100 dark:border-gray-600 cursor-pointer select-none"><input type="checkbox" value="${p.id}" checked class="accent-brand-600 w-3.5 h-3.5"> <span class="text-xs font-bold dark:text-gray-200">${p.name}</span></label>`).join(''); }
         function openShareModal() { const listMosques = mosques.filter(m => m.lists && m.lists.includes(currentList)); document.getElementById('shareMosqueSelectors').innerHTML = listMosques.map(m => `<label class="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-600 transition-colors"><input type="checkbox" value="${m.id}" checked class="w-4 h-4 accent-brand-600 rounded"><span class="text-sm font-bold dark:text-gray-200">${m.name}</span></label>`).join(''); document.getElementById('shareModal').classList.remove('hidden'); }
         async function generateShareImage() { const selectedPrayers = Array.from(document.querySelectorAll('#sharePrayerSelectors input:checked')).map(i => i.value); const selectedMosqueIds = Array.from(document.querySelectorAll('#shareMosqueSelectors input:checked')).map(i => i.value); const captureContent = document.getElementById('captureContent'); captureContent.innerHTML = ''; document.getElementById('captureDate').innerText = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); const table = document.createElement('table'); table.className = "w-full text-sm border-collapse"; let headerHTML = `<tr class="bg-brand-600 text-white"><th class="p-3 text-left rounded-tl-lg text-xs uppercase tracking-wider">Mosque</th>`; selectedPrayers.forEach((p, idx) => { const name = prayersList.find(x => x.id === p).name; headerHTML += `<th class="p-3 text-center text-xs ${idx === selectedPrayers.length - 1 ? 'rounded-tr-lg' : ''}">${name}</th>`; }); headerHTML += `</tr>`; let bodyHTML = ''; selectedMosqueIds.forEach((id, idx) => { const m = mosques.find(x => x.id === id); bodyHTML += `<tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} border-b border-gray-100">`; bodyHTML += `<td class="p-3 font-bold text-gray-700 text-xs">${m.name}</td>`; selectedPrayers.forEach(p => { const timeStr = m.timings[p]?.time ? formatTime12(m.timings[p].time).replace(/<[^>]*>/g, '') : '--:--'; bodyHTML += `<td class="p-3 text-center font-mono font-bold text-gray-800 text-xs">${timeStr}</td>`; }); bodyHTML += `</tr>`; }); table.innerHTML = headerHTML + bodyHTML; captureContent.appendChild(table); const captureArea = document.getElementById('captureArea'); captureArea.classList.remove('invisible'); captureArea.style.zIndex = "9999"; try { const canvas = await html2canvas(captureArea, { scale: 2 }); const link = document.createElement('a'); link.download = `Jamaat_Timings_${Date.now()}.png`; link.href = canvas.toDataURL(); link.click(); } catch (err) { console.error("Screenshot failed", err); } finally { captureArea.classList.add('invisible'); captureArea.style.zIndex = "-1"; closeModal('shareModal'); } }
