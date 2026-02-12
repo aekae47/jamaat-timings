@@ -45,6 +45,10 @@
         .toggle-checkbox:checked + .toggle-label { background-color: #0d9488; }
         .toggle-label { width: 36px; height: 20px; background-color: #e5e7eb; transition: 0.2s; }
         .toggle-checkbox { right: 16px; transition: 0.2s; width: 16px; height: 16px; top: 2px; }
+        
+        /* List Chip Styles */
+        .list-btn { @apply px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-xs font-bold text-gray-500 dark:text-gray-400 cursor-pointer transition-all select-none; }
+        .list-btn.active { @apply bg-brand-600 text-white border-brand-600 shadow-md; }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans transition-colors duration-200">
@@ -52,7 +56,6 @@
     <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-[60] hidden transition-opacity backdrop-blur-sm"></div>
     <div id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-white dark:bg-gray-800 shadow-2xl z-[70] transform -translate-x-full transition-transform duration-300 ease-in-out p-6 flex flex-col">
         <h2 class="text-2xl font-serif font-bold mb-1 text-brand-600 dark:text-brand-400">Settings</h2>
-        
         <div class="space-y-6 flex-1 mt-6">
             <div class="flex items-center justify-between">
                 <span class="font-bold text-sm">Dark Mode</span>
@@ -61,9 +64,7 @@
                     <label for="theme_toggle" class="toggle-label block overflow-hidden rounded-full bg-gray-300 cursor-pointer"></label>
                 </div>
             </div>
-
             <hr class="border-gray-100 dark:border-gray-700">
-
             <div>
                 <h3 class="text-[10px] font-bold uppercase text-gray-400 mb-4 tracking-wider">Seasonal Visibility</h3>
                 <div class="space-y-4 text-sm font-medium">
@@ -73,74 +74,45 @@
                     <div class="flex justify-between items-center"><span>Late Isha</span><input type="checkbox" id="mode_lateIsha" onchange="toggleMode('lateIsha')" class="accent-brand-600 w-4 h-4"></div>
                 </div>
             </div>
-
             <div class="pt-4 border-t border-gray-100 dark:border-gray-700">
-                <button onclick="exportCSV()" class="w-full flex items-center justify-center gap-2 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                    <i class="fas fa-download"></i> Backup Data (CSV)
-                </button>
+                <button onclick="exportCSV()" class="w-full flex items-center justify-center gap-2 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"><i class="fas fa-download"></i> Backup Data (CSV)</button>
             </div>
         </div>
     </div>
 
     <div class="fixed top-0 w-full z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-gray-700 transition-all duration-300" id="mainHeader">
         <div class="flex flex-col items-center justify-center pt-2 pb-1 relative h-[50px]">
-            <button onclick="toggleSidebar()" class="absolute left-3 top-2.5 text-gray-500 hover:text-brand-600 w-8 h-8 flex items-center justify-center rounded-full transition-colors">
-                <i class="fas fa-bars text-lg"></i>
-            </button>
+            <button onclick="toggleSidebar()" class="absolute left-3 top-2.5 text-gray-500 hover:text-brand-600 w-8 h-8 flex items-center justify-center rounded-full transition-colors"><i class="fas fa-bars text-lg"></i></button>
             <h1 class="text-lg font-serif font-bold text-brand-600 dark:text-brand-400 tracking-tight">Jamaat on Time</h1>
             <p class="text-[9px] text-gray-400 font-medium -mt-0.5">by @aekae47</p>
         </div>
-
         <div id="headerClockView" class="w-full pb-3">
             <div class="flex flex-col items-center justify-center pt-2">
-                <div class="text-5xl font-mono font-bold text-gray-800 dark:text-white tracking-tighter leading-none flex items-baseline gap-1" id="bigClock">
-                    --:-- <span class="text-lg font-sans font-bold text-gray-400">AM</span>
-                </div>
+                <div class="text-5xl font-mono font-bold text-gray-800 dark:text-white tracking-tighter leading-none flex items-baseline gap-1" id="bigClock">--:--</div>
                 <div id="fridayBadge" class="hidden mt-1 bg-brand-50 text-brand-600 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest">It's Friday!</div>
             </div>
         </div>
-
         <div id="headerSearchView" class="hidden px-4 pb-2">
-            <div class="relative">
-                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
-                <input type="text" id="searchInput" onkeyup="handleSearch()" placeholder="Search name, area, time..." class="w-full bg-gray-100 dark:bg-gray-700/50 border-none rounded-lg py-2 pl-9 pr-4 text-xs font-bold outline-none dark:text-white transition-all focus:ring-2 focus:ring-brand-500">
-            </div>
+            <div class="relative"><i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i><input type="text" id="searchInput" onkeyup="handleSearch()" placeholder="Search..." class="w-full bg-gray-100 dark:bg-gray-700/50 border-none rounded-lg py-2 pl-9 pr-4 text-xs font-bold outline-none dark:text-white transition-all focus:ring-2 focus:ring-brand-500"></div>
         </div>
-
-        <div id="filterBarContainer" class="w-full border-t border-gray-50 dark:border-gray-700/50 transition-all duration-300 overflow-hidden max-h-12">
-            <div class="flex overflow-x-auto no-scrollbar px-3 py-2 gap-2" id="listBar"></div>
-        </div>
+        <div id="filterBarContainer" class="w-full border-t border-gray-50 dark:border-gray-700/50 transition-all duration-300 overflow-hidden max-h-12"><div class="flex overflow-x-auto no-scrollbar px-3 py-2 gap-2" id="listBar"></div></div>
     </div>
 
     <div class="pt-[160px] pb-24 max-w-md mx-auto min-h-screen px-3" id="mainContainer">
-        <div class="text-center mt-32 text-gray-400 flex flex-col items-center">
-            <i class="fas fa-circle-notch fa-spin text-2xl mb-3 text-brand-300"></i>
-            <p class="text-xs font-bold uppercase tracking-widest opacity-50" id="loadingMsg">Starting...</p>
-        </div>
+        <div class="text-center mt-32 text-gray-400 flex flex-col items-center"><i class="fas fa-circle-notch fa-spin text-2xl mb-3 text-brand-300"></i><p class="text-xs font-bold uppercase tracking-widest opacity-50">Starting...</p></div>
     </div>
 
-    <button id="btnAddFloating" onclick="openMosqueModal()" class="hidden fixed bottom-20 right-4 w-14 h-14 bg-brand-600 text-white rounded-full shadow-2xl shadow-brand-500/40 flex items-center justify-center z-40 hover:scale-105 transition-transform">
-        <i class="fas fa-plus text-xl"></i>
-    </button>
+    <button id="btnAddFloating" onclick="openMosqueModal()" class="hidden fixed bottom-20 right-4 w-14 h-14 bg-brand-600 text-white rounded-full shadow-2xl shadow-brand-500/40 flex items-center justify-center z-40 hover:scale-105 transition-transform"><i class="fas fa-plus text-xl"></i></button>
 
     <div class="fixed bottom-0 w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 p-2 flex justify-around z-40 pb-4">
-        <button onclick="setViewMode('next')" class="nav-btn w-16 group flex flex-col items-center justify-center" id="nav_next">
-            <i class="fas fa-clock text-lg mb-1"></i>
-            <span class="text-[10px] font-bold">Prayer</span>
-        </button>
-        <button onclick="setViewMode('list')" class="nav-btn w-16 group flex flex-col items-center justify-center" id="nav_list">
-            <i class="fas fa-mosque text-lg mb-1"></i>
-            <span class="text-[10px] font-bold">Mosques</span>
-        </button>
+        <button onclick="setViewMode('next')" class="nav-btn w-16 group flex flex-col items-center justify-center" id="nav_next"><i class="fas fa-clock text-lg mb-1"></i><span class="text-[10px] font-bold">Prayer</span></button>
+        <button onclick="setViewMode('list')" class="nav-btn w-16 group flex flex-col items-center justify-center" id="nav_list"><i class="fas fa-mosque text-lg mb-1"></i><span class="text-[10px] font-bold">Mosques</span></button>
     </div>
 
     <div id="mosqueDetailModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm max-h-[85vh] shadow-2xl flex flex-col animate-card overflow-hidden">
             <div class="p-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/20 flex justify-between items-start">
-                <div>
-                    <h2 class="text-xl font-serif font-bold text-gray-800 dark:text-white leading-tight" id="detail_name">Name</h2>
-                    <p class="text-xs font-bold text-gray-500 dark:text-gray-400 mt-1" id="detail_area">Area</p>
-                </div>
+                <div><h2 class="text-xl font-serif font-bold text-gray-800 dark:text-white leading-tight" id="detail_name">Name</h2><p class="text-xs font-bold text-gray-500 dark:text-gray-400 mt-1" id="detail_area">Area</p></div>
                 <div class="flex gap-2">
                     <button onclick="openMosqueModal(currentDetailId)" class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center hover:bg-brand-100"><i class="fas fa-pencil-alt text-xs"></i></button>
                     <button onclick="closeModal('mosqueDetailModal')" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center hover:bg-gray-200"><i class="fas fa-times"></i></button>
@@ -148,54 +120,33 @@
             </div>
             <div class="flex-1 overflow-y-auto no-scrollbar p-5">
                 <div id="detail_timings" class="space-y-2 mb-6 cursor-pointer" onclick="openEditTiming(currentDetailId)" title="Tap to Edit"></div>
-                <div class="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 border border-gray-100 dark:border-gray-600">
-                    <h4 class="text-[10px] font-bold text-gray-400 uppercase mb-2 tracking-wider">Notes</h4>
-                    <p id="detail_notes" class="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed"></p>
-                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 border border-gray-100 dark:border-gray-600"><h4 class="text-[10px] font-bold text-gray-400 uppercase mb-2 tracking-wider">Notes</h4><p id="detail_notes" class="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed"></p></div>
             </div>
-            <div class="p-4 border-t border-gray-100 dark:border-gray-700">
-                <a id="detail_directions" href="#" target="_blank" class="flex items-center justify-center w-full bg-brand-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-brand-700"><i class="fas fa-location-arrow mr-2"></i> Directions</a>
-            </div>
+            <div class="p-4 border-t border-gray-100 dark:border-gray-700"><a id="detail_directions" href="#" target="_blank" class="flex items-center justify-center w-full bg-brand-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-brand-700"><i class="fas fa-location-arrow mr-2"></i> Directions</a></div>
         </div>
     </div>
 
     <div id="mosqueInfoModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-card max-h-[90vh] overflow-y-auto no-scrollbar relative">
-            
+        <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-card">
             <div class="flex justify-between items-center mb-5">
                 <h3 class="text-lg font-serif font-bold dark:text-white" id="mosqueModalTitle">Add Mosque</h3>
-                <button id="btnDeleteMosqueHeader" onclick="deleteMosque()" class="text-red-400 hover:text-red-600 p-2 rounded-lg bg-red-50 dark:bg-red-900/20 hidden" title="Delete Mosque">
-                    <i class="fas fa-trash-alt text-sm"></i>
-                </button>
+                <button id="btnDeleteMosque" onclick="deleteMosque()" class="text-red-400 hover:text-red-600 p-2 rounded-lg bg-red-50 dark:bg-red-900/20 hidden transition-colors" title="Delete"><i class="fas fa-trash-alt text-sm"></i></button>
             </div>
-
+            
             <input type="hidden" id="editMosqueId">
             
             <div class="space-y-4">
-                <div>
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Name</label>
-                    <input type="text" id="m_name" class="input-field font-bold" placeholder="Masjid-e-...">
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Area</label>
-                    <input type="text" id="m_area" class="input-field" placeholder="Area">
-                </div>
+                <div><label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Name</label><input type="text" id="m_name" class="input-field font-bold" placeholder="Masjid-e-..."></div>
+                <div><label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Area</label><input type="text" id="m_area" class="input-field" placeholder="Area"></div>
                 
                 <div class="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl border border-gray-100 dark:border-gray-600">
                     <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Lists</label>
-                    <div id="listCheckboxes" class="flex flex-wrap gap-2 mb-2">
-                        </div>
-                    <input type="text" id="m_new_list" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-brand-500" placeholder="+ New List Tag (e.g. In-Laws)">
+                    <div id="listChipsContainer" class="flex flex-wrap gap-2 mb-2"></div>
+                    <input type="text" id="m_new_list" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-brand-500" placeholder="+ New List">
                 </div>
 
-                <div>
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Maps Link</label>
-                    <input type="url" id="m_link" class="input-field text-xs" placeholder="https://maps.google...">
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Notes or detailed location instructions</label>
-                    <textarea id="m_notes" rows="2" class="input-field text-xs" placeholder="Gate no, floor, etc."></textarea>
-                </div>
+                <div><label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Maps Link</label><input type="url" id="m_link" class="input-field text-xs" placeholder="https://maps.google..."></div>
+                <div><label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Notes or detailed location instructions</label><textarea id="m_notes" rows="2" class="input-field text-xs" placeholder="Notes..."></textarea></div>
             </div>
             
             <div class="mt-6 flex justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-700">
@@ -207,10 +158,7 @@
 
     <div id="editTimingModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm p-5 shadow-2xl animate-card max-h-[90vh] overflow-y-auto no-scrollbar">
-            <div class="flex justify-between items-center mb-5 pb-3 border-b border-gray-100 dark:border-gray-700">
-                <h3 class="text-lg font-serif font-bold dark:text-white" id="timingModalMosqueName">Timings</h3>
-                <button onclick="closeModal('editTimingModal')" class="text-gray-400"><i class="fas fa-times"></i></button>
-            </div>
+            <div class="flex justify-between items-center mb-5 pb-3 border-b border-gray-100 dark:border-gray-700"><h3 class="text-lg font-serif font-bold dark:text-white" id="timingModalMosqueName">Timings</h3><button onclick="closeModal('editTimingModal')" class="text-gray-400"><i class="fas fa-times"></i></button></div>
             <div id="timingEditorContainer" class="space-y-3"></div>
             <div class="mt-5 pt-3 border-t border-gray-100 dark:border-gray-700">
                 <button onclick="toggleSpecialPrayers()" class="w-full flex justify-between items-center text-xs font-bold text-gray-500 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-xl"><span>SPECIAL PRAYERS</span><i id="specialChevron" class="fas fa-chevron-down"></i></button>
@@ -228,6 +176,7 @@
         const firebaseConfig = { apiKey: "AIzaSyAEzXz42Zih7M6yY97_4e8_E1BNsjbJhnI", authDomain: "timings-ak.firebaseapp.com", projectId: "timings-ak", storageBucket: "timings-ak.firebasestorage.app", messagingSenderId: "1082790063422", appId: "1:1082790063422:web:be439e3d932475a9fe906f" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const auth = firebase.auth();
         
         // CSS
         const inputClass = "w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl text-sm font-bold text-gray-700 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 transition-all";
@@ -247,7 +196,6 @@
             document.getElementById('theme_toggle').checked = appSettings.theme === 'dark';
             updateSidebarToggles(); updateClock(); setInterval(updateClock, 1000);
             loadData();
-            
             let lastScroll = 0;
             window.addEventListener('scroll', () => {
                 const currentScroll = window.pageYOffset;
@@ -263,7 +211,6 @@
                 if (snapshot.empty) renderApp();
                 else {
                     mosques = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    allLists = new Set(['Favorites', 'Home', 'Work']);
                     mosques.forEach(m => {
                         if(!m.timings) m.timings={}; 
                         if(!m.lists) m.lists=['Favorites'];
@@ -275,16 +222,82 @@
             });
         }
 
-        // --- EXPORT ---
-        function exportCSV() {
-            if (!mosques.length) return alert("No data");
-            let csv = "Name,Area,Lists,Fajr,Zuhr,Asr,Isha,Jumma,Address\n";
-            mosques.forEach(m => { const t = m.timings; csv += [`"${m.name}"`, `"${m.area}"`, `"${m.lists.join('|')}"`, t.fajr?.time, t.zuhr?.time, t.asr?.time, t.isha?.time, t.jumma?.time, `"${(m.address||'').replace(/\n/g, ' ')}"`].join(",") + "\n"; });
-            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-            link.download = "jamaat_backup_" + new Date().toISOString().slice(0,10) + ".csv"; link.click();
+        function renderListBar() { const listsToShow = ['Favorites', 'All', ...Array.from(allLists).filter(l => l!=='Favorites')]; document.getElementById('listBar').innerHTML = listsToShow.map(list => `<button onclick="switchList('${list}')" class="px-3 py-1.5 rounded-full text-[10px] font-bold transition-all whitespace-nowrap border ${currentList === list ? 'bg-brand-600 text-white border-brand-600 shadow-md' : 'bg-white dark:bg-gray-700 text-gray-500 border-gray-200 dark:border-gray-600'}">${list}</button>`).join(''); }
+        function switchList(name) { currentList = name; renderApp(); renderListBar(); }
+
+        // --- NEW OPEN MODAL LOGIC (FIXED) ---
+        function openMosqueModal(id = null) { 
+            document.getElementById('mosqueInfoModal').classList.remove('hidden'); 
+            const isEdit = id !== null; 
+            document.getElementById('mosqueModalTitleText').innerText = isEdit ? 'Edit Mosque' : 'Add Mosque'; 
+            document.getElementById('editMosqueId').value = id || ''; 
+            
+            // Delete Button Handling
+            const delBtn = document.getElementById('btnDeleteMosque'); 
+            if(isEdit) delBtn.classList.remove('hidden');
+            else delBtn.classList.add('hidden');
+
+            // 1. Generate List Chips
+            const container = document.getElementById('listChipsContainer');
+            container.innerHTML = Array.from(allLists).map(l => 
+                `<div onclick="this.classList.toggle('active')" class="list-btn ${l==='Favorites' && !isEdit ? 'active':''}">${l}</div>`
+            ).join('');
+            
+            document.getElementById('m_new_list').value = '';
+
+            if (isEdit) { 
+                const m = mosques.find(x => x.id === id); 
+                if(m) {
+                    document.getElementById('m_name').value = m.name; 
+                    document.getElementById('m_area').value = m.area; 
+                    document.getElementById('m_link').value = m.locationLink || ''; 
+                    document.getElementById('m_notes').value = m.address || ''; 
+                    // Set active lists
+                    const chips = container.querySelectorAll('.list-btn');
+                    chips.forEach(chip => {
+                        if(m.lists.includes(chip.innerText)) chip.classList.add('active');
+                        else chip.classList.remove('active');
+                    });
+                }
+            } else { 
+                document.getElementById('m_name').value = 'Masjid-e-'; 
+                document.getElementById('m_area').value = ''; 
+                document.getElementById('m_link').value = ''; 
+                document.getElementById('m_notes').value = ''; 
+            } 
         }
 
-        // --- LOGIC ---
+        async function saveMosqueInfo() { 
+            const id = document.getElementById('editMosqueId').value; 
+            const name = document.getElementById('m_name').value; 
+            
+            // Gather Lists from Chips
+            const chips = document.querySelectorAll('#listChipsContainer .list-btn.active');
+            let selected = Array.from(chips).map(c => c.innerText);
+            
+            const newTag = document.getElementById('m_new_list').value.trim();
+            if(newTag) selected.push(newTag);
+            if(selected.length === 0) selected.push('Favorites');
+
+            if (!name) return alert("Enter Name"); 
+            const data = { name, area: document.getElementById('m_area').value||'', lists: selected, locationLink: document.getElementById('m_link').value, address: document.getElementById('m_notes').value }; 
+            closeModal('mosqueInfoModal'); 
+            
+            try { 
+                if(id) {
+                    await db.collection('mosques').doc(id).update(data);
+                } else { 
+                    data.order=Date.now(); 
+                    data.timings={fajr:{time:'05:30',fixed:false},zuhr:{time:'13:15',fixed:true},asr:{time:'16:45',fixed:false},isha:{time:'20:15',fixed:true},jumma:{time:'13:30',fixed:true}}; 
+                    const docRef = await db.collection('mosques').add(data);
+                    // OPEN TIMINGS IMMEDIATELY
+                    setTimeout(() => openEditTiming(docRef.id), 500); 
+                } 
+                showToast(); 
+            } catch(e){console.error(e);} 
+        }
+
+        // --- CLOCK ---
         function updateClock() {
             const now = new Date(); let hours = now.getHours(); const minutes = String(now.getMinutes()).padStart(2, '0');
             const ampm = hours >= 12 ? 'PM' : 'AM'; hours = hours % 12 || 12;
@@ -311,7 +324,6 @@
             return `${mins}m left`;
         }
 
-        // --- RENDERERS ---
         function renderApp() { renderHeader(); renderListBar(); const c = document.getElementById('mainContainer'); if(!c) return; if (viewMode === 'next') renderNextPrayerMode(c); else renderListMode(c); updateNavState(); }
 
         function renderHeader() {
@@ -342,7 +354,7 @@
                 html += list.map(m => {
                     const t = m.timings[pid]; const [h, mns] = t.time.split(':'); const numTime = `${parseInt(h)%12||12}:${mns}`; const suff = parseInt(h)>=12 ? 'PM' : 'AM';
                     const remaining = isFirst ? `<div class="text-[9px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 px-2 py-0.5 rounded mt-1 inline-block">${getTimeRemaining(t.time)}</div>` : '';
-                    return `<div onclick="currentDetailId='${m.id}'; openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] ${isFirst ? 'border-brand-500' : 'border-gray-200 dark:border-gray-600'} cursor-pointer active:scale-[0.98] transition-transform animate-card"><div class="flex-1 min-w-0 mr-4"><h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${m.name}</h4><p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">${m.area}</p></div><div class="text-right flex flex-col items-end"><div class="whitespace-nowrap"><span class="font-mono text-lg font-bold text-gray-800 dark:text-white tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>${remaining}</div></div>`;
+                    return `<div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] ${isFirst ? 'border-brand-500' : 'border-gray-200 dark:border-gray-600'} cursor-pointer active:scale-[0.98] transition-transform animate-card"><div class="flex-1 min-w-0 mr-4"><h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${m.name}</h4><p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">${m.area}</p></div><div class="text-right flex flex-col items-end"><div class="whitespace-nowrap"><span class="font-mono text-lg font-bold text-gray-800 dark:text-white tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>${remaining}</div></div>`;
                 }).join(''); html += `</div>`;
             });
             container.innerHTML = html;
@@ -383,68 +395,6 @@
                 </div>`;
         }
 
-        // --- UTILS ---
-        function renderListBar() { const listsToShow = ['Favorites', 'All', ...Array.from(allLists).filter(l => l!=='Favorites')]; document.getElementById('listBar').innerHTML = listsToShow.map(list => `<button onclick="switchList('${list}')" class="px-3 py-1.5 rounded-full text-[10px] font-bold transition-all whitespace-nowrap border ${currentList === list ? 'bg-brand-600 text-white border-brand-600 shadow-md' : 'bg-white dark:bg-gray-700 text-gray-500 border-gray-200 dark:border-gray-600'}">${list}</button>`).join(''); }
-        function switchList(name) { currentList = name; renderApp(); renderListBar(); }
-        
-        function openMosqueModal(id = null) { 
-            document.getElementById('mosqueInfoModal').classList.remove('hidden'); 
-            const isEdit = id !== null; 
-            document.getElementById('mosqueModalTitleText').innerText = isEdit ? 'Edit Mosque' : 'Add Mosque'; 
-            document.getElementById('editMosqueId').value = id || ''; 
-            const delBtn = document.getElementById('btnDeleteMosqueHeader'); 
-            
-            // Dynamic Checkboxes
-            const container = document.getElementById('listCheckboxes');
-            container.innerHTML = Array.from(allLists).map(l => `<label class="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg border border-gray-100 dark:border-gray-600 cursor-pointer select-none text-xs"><input type="checkbox" value="${l}" class="m_list_cb accent-brand-600 w-3.5 h-3.5"> <span>${l}</span></label>`).join('');
-            document.getElementById('m_new_list').value = '';
-
-            if (isEdit) { 
-                const m = mosques.find(x => x.id === id); 
-                document.getElementById('m_name').value = m.name; 
-                document.getElementById('m_area').value = m.area; 
-                document.getElementById('m_link').value = m.locationLink || ''; 
-                document.getElementById('m_notes').value = m.address || ''; 
-                document.querySelectorAll('.m_list_cb').forEach(cb => { cb.checked = m.lists && m.lists.includes(cb.value); }); 
-                delBtn.classList.remove('hidden'); 
-            } else { 
-                document.getElementById('m_name').value = 'Masjid-e-'; 
-                document.getElementById('m_area').value = ''; 
-                document.getElementById('m_link').value = ''; 
-                document.getElementById('m_notes').value = ''; 
-                document.querySelectorAll('.m_list_cb').forEach(cb => { cb.checked = cb.value === 'Favorites'; }); 
-                delBtn.classList.add('hidden'); 
-            } 
-        }
-
-        async function saveMosqueInfo() { 
-            const id = document.getElementById('editMosqueId').value; 
-            const name = document.getElementById('m_name').value; 
-            
-            // Gather Lists
-            const selected = Array.from(document.querySelectorAll('.m_list_cb:checked')).map(cb => cb.value);
-            const newTag = document.getElementById('m_new_list').value.trim();
-            if(newTag) selected.push(newTag);
-            if(selected.length === 0) selected.push('Favorites');
-
-            if (!name) return alert("Enter Name"); 
-            const data = { name, area: document.getElementById('m_area').value||'', lists: selected, locationLink: document.getElementById('m_link').value, address: document.getElementById('m_notes').value }; 
-            closeModal('mosqueInfoModal'); 
-            
-            try { 
-                if(id) {
-                    await db.collection('mosques').doc(id).update(data);
-                } else { 
-                    data.order=Date.now(); 
-                    data.timings={fajr:{time:'05:30',fixed:false},zuhr:{time:'13:15',fixed:true},asr:{time:'16:45',fixed:false},isha:{time:'20:15',fixed:true},jumma:{time:'13:30',fixed:true}}; 
-                    const docRef = await db.collection('mosques').add(data);
-                    // OPEN TIMINGS IMMEDIATELY
-                    openEditTiming(docRef.id);
-                } 
-                showToast(); 
-            } catch(e){console.error(e);} 
-        }
-
         // ... (Boilerplate Utils) ...
         function formatTime12(time24) { if (!time24 || time24.trim() === '') return '--:--'; if (time24.includes('.')) return `${time24} <span class="text-[9px]">Parahs</span>`; const [h, m] = time24.split(':'); let hours = parseInt(h); const suffix = hours >= 12 ? 'PM' : 'AM'; hours = hours % 12 || 12; return `${hours}:${m}<span class="text-[10px] ml-0.5 font-normal text-gray-400">${suffix}</span>`; }
         function showToast() { const t = document.getElementById('toast'); t.classList.remove('opacity-0', 'translate-y-4'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-4'), 2000); }
@@ -465,6 +415,7 @@
         function clearTimeInput(key) { document.getElementById(`input_${key}`).value = ''; updateDisplayLayer(key); }
         function adjustTime(key, mins) { const input = document.getElementById(`input_${key}`); if (!input.value) return; const [h, m] = input.value.split(':').map(Number); const date = new Date(); date.setHours(h); date.setMinutes(m + mins); const newH = String(date.getHours()).padStart(2, '0'); const newM = String(date.getMinutes()).padStart(2, '0'); input.value = `${newH}:${newM}`; updateDisplayLayer(key); }
         function toggleSpecialPrayers() { document.getElementById('specialPrayersContainer').classList.toggle('hidden'); document.getElementById('specialChevron').classList.toggle('rotate-180'); }
+        function isTimeInRange(target24, filter24) { if (!target24 || !filter24) return false; const tMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; }; return Math.abs(tMin(target24) - tMin(filter24)) <= 15; }
         function setupShareModal() { document.getElementById('sharePrayerSelectors').innerHTML = prayersList.map(p => `<label class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg border border-gray-100 dark:border-gray-600 cursor-pointer select-none"><input type="checkbox" value="${p.id}" checked class="accent-brand-600 w-3.5 h-3.5"> <span class="text-xs font-bold dark:text-gray-200">${p.name}</span></label>`).join(''); }
         function openShareModal() { const listMosques = mosques.filter(m => m.lists && m.lists.includes(currentList)); document.getElementById('shareMosqueSelectors').innerHTML = listMosques.map(m => `<label class="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-600 transition-colors"><input type="checkbox" value="${m.id}" checked class="w-4 h-4 accent-brand-600 rounded"><span class="text-sm font-bold dark:text-gray-200">${m.name}</span></label>`).join(''); document.getElementById('shareModal').classList.remove('hidden'); }
         async function generateShareImage() { const selectedPrayers = Array.from(document.querySelectorAll('#sharePrayerSelectors input:checked')).map(i => i.value); const selectedMosqueIds = Array.from(document.querySelectorAll('#shareMosqueSelectors input:checked')).map(i => i.value); const captureContent = document.getElementById('captureContent'); captureContent.innerHTML = ''; document.getElementById('captureDate').innerText = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); const table = document.createElement('table'); table.className = "w-full text-sm border-collapse"; let headerHTML = `<tr class="bg-brand-600 text-white"><th class="p-3 text-left rounded-tl-lg text-xs uppercase tracking-wider">Mosque</th>`; selectedPrayers.forEach((p, idx) => { const name = prayersList.find(x => x.id === p).name; headerHTML += `<th class="p-3 text-center text-xs ${idx === selectedPrayers.length - 1 ? 'rounded-tr-lg' : ''}">${name}</th>`; }); headerHTML += `</tr>`; let bodyHTML = ''; selectedMosqueIds.forEach((id, idx) => { const m = mosques.find(x => x.id === id); bodyHTML += `<tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} border-b border-gray-100">`; bodyHTML += `<td class="p-3 font-bold text-gray-700 text-xs">${m.name}</td>`; selectedPrayers.forEach(p => { const timeStr = m.timings[p]?.time ? formatTime12(m.timings[p].time).replace(/<[^>]*>/g, '') : '--:--'; bodyHTML += `<td class="p-3 text-center font-mono font-bold text-gray-800 text-xs">${timeStr}</td>`; }); bodyHTML += `</tr>`; }); table.innerHTML = headerHTML + bodyHTML; captureContent.appendChild(table); const captureArea = document.getElementById('captureArea'); captureArea.classList.remove('invisible'); captureArea.style.zIndex = "9999"; try { const canvas = await html2canvas(captureArea, { scale: 2 }); const link = document.createElement('a'); link.download = `Jamaat_Timings_${Date.now()}.png`; link.href = canvas.toDataURL(); link.click(); } catch (err) { console.error("Screenshot failed", err); } finally { captureArea.classList.add('invisible'); captureArea.style.zIndex = "-1"; closeModal('shareModal'); } }
