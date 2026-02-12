@@ -7,7 +7,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Google+Sans+Flex:wght@400;500;700&family=Google+Sans+Code:wght@500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Playfair+Display:wght@700&family=Source+Code+Pro:wght@600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -15,6 +15,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
     <script>
         tailwind.config = {
@@ -22,9 +23,9 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Google Sans Flex', 'sans-serif'],
+                        sans: ['Montserrat', 'sans-serif'],
                         serif: ['Playfair Display', 'serif'],
-                        mono: ['Google Sans Code', 'monospace'],
+                        mono: ['Source Code Pro', 'monospace'],
                     },
                     colors: {
                         brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' }
@@ -80,7 +81,14 @@
                     <div class="flex justify-between items-center"><span>Late Isha</span><input type="checkbox" id="mode_lateIsha" onchange="toggleMode('lateIsha')" class="accent-brand-600 w-4 h-4"></div>
                 </div>
             </div>
+
+            <div id="adminTools" class="hidden pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button onclick="exportCSV()" class="w-full flex items-center justify-center gap-2 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-download"></i> Backup Data (CSV)
+                </button>
+            </div>
         </div>
+        
         <button onclick="emergencyReset()" class="text-[10px] text-gray-300 hover:text-red-400 text-center pb-2 transition-colors">Reset Database</button>
     </div>
 
@@ -109,9 +117,8 @@
         <div class="text-center mt-32 text-gray-400 flex flex-col items-center">
             <i class="fas fa-circle-notch fa-spin text-2xl mb-3 text-brand-300"></i>
             <p class="text-xs font-bold uppercase tracking-widest opacity-50" id="loadingMsg">Loading...</p>
-            
             <button id="btnFixStuck" onclick="emergencyReset()" class="hidden mt-8 bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-lg animate-bounce">
-                ⚠️ App Stuck? Click to Fix
+                ⚠️ Stuck? Click to Fix
             </button>
         </div>
     </div>
@@ -210,12 +217,11 @@
     <div id="toast" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-2xl opacity-0 transition-all duration-300 z-50 pointer-events-none translate-y-4"><i class="fas fa-check-circle text-brand-400 mr-2"></i><span>Saved</span></div>
 
     <script>
-        // --- 1. SETUP ---
         const firebaseConfig = { apiKey: "AIzaSyAEzXz42Zih7M6yY97_4e8_E1BNsjbJhnI", authDomain: "timings-ak.firebaseapp.com", projectId: "timings-ak", storageBucket: "timings-ak.firebasestorage.app", messagingSenderId: "1082790063422", appId: "1:1082790063422:web:be439e3d932475a9fe906f" };
-        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        
+        const auth = firebase.auth();
+
         // CSS
         const inputClass = "w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl text-sm font-bold text-gray-700 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 transition-all";
         document.querySelectorAll('.input-field').forEach(e => e.className = inputClass);
@@ -238,7 +244,6 @@
         const sequenceOrder = ['fajr', 'zuhr', 'asr', 'isha']; 
         const specialPrayersList = [ { id: 'taraweeh', name: 'Taraweeh', type: 'parahs', mode: 'ramadan' }, { id: 'eidFitr', name: 'Eid-ul-Fitr', mode: 'eidFitr' }, { id: 'eidAdha', name: 'Eid-ul-Adha', mode: 'eidAdha' }, { id: 'lateIsha', name: 'Late Isha', mode: 'lateIsha' } ];
 
-        // --- INIT ---
         function init() {
             if(appSettings.theme === 'dark') document.documentElement.classList.add('dark');
             document.getElementById('theme_toggle').checked = appSettings.theme === 'dark';
@@ -255,7 +260,6 @@
             // DIRECT DB LOAD (No Auth needed if Rules are public)
             loadData();
             
-            // Scroll collapse logic
             let lastScroll = 0;
             window.addEventListener('scroll', () => {
                 const currentScroll = window.pageYOffset;
@@ -325,13 +329,48 @@
         function updateLockUI() {
             const status = document.getElementById('lockStatus');
             const btn = document.getElementById('btnLockToggle');
+            const adminTools = document.getElementById('adminTools');
             if (isAdmin) {
                 status.innerHTML = `<span class="text-xs font-bold text-green-600">Unlocked</span><i class="fas fa-unlock text-green-500"></i>`;
                 btn.classList.remove('hidden');
+                adminTools.classList.remove('hidden');
             } else {
                 status.innerHTML = `<span class="text-xs font-bold text-gray-500 dark:text-gray-300">Editing Locked</span><i class="fas fa-lock text-gray-400"></i>`;
                 btn.classList.add('hidden');
+                adminTools.classList.add('hidden');
             }
+        }
+
+        // --- EXPORT CSV ---
+        function exportCSV() {
+            if (!mosques.length) return alert("No data to export");
+            
+            let csv = "Name,Area,Lists,Fajr,Zuhr,Asr,Isha,Jumma,Address\n";
+            
+            mosques.forEach(m => {
+                const t = m.timings;
+                const row = [
+                    `"${m.name || ''}"`,
+                    `"${m.area || ''}"`,
+                    `"${m.lists.join('|')}"`,
+                    t.fajr?.time || '',
+                    t.zuhr?.time || '',
+                    t.asr?.time || '',
+                    t.isha?.time || '',
+                    t.jumma?.time || '',
+                    `"${(m.address || '').replace(/\n/g, ' ')}"`
+                ].join(",");
+                csv += row + "\n";
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "jamaat_backup_" + new Date().toISOString().slice(0,10) + ".csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // --- CLOCK ---
@@ -342,11 +381,9 @@
             currentTimeDisplay = `${hours}:${minutes} <span class="text-lg font-bold opacity-60">${ampm}</span>`;
             
             const min = now.getHours() * 60 + now.getMinutes();
-            const day = now.getDay(); // 5 = Friday
+            const day = now.getDay(); 
             const isFriday = day === 5;
-            const isThursdayNight = day === 4 && min >= 1065; // After Maghrib
 
-            // Logic: Thursday Maghrib onwards -> Treat next day's Zuhr as Jumma
             if (min >= 1350 || min < 405) currentTargetPrayer = 'fajr';
             else if (min >= 405 && min < 930) currentTargetPrayer = isFriday ? 'jumma' : 'zuhr';
             else if (min >= 930 && min < 1065) currentTargetPrayer = 'asr';
@@ -366,7 +403,6 @@
                 let pid = sequenceOrder[idx];
                 const now = new Date();
                 const day = now.getDay();
-                // Friday Logic or Thursday Night Logic
                 if (pid === 'zuhr') {
                     if (day === 5) pid = 'jumma';
                     else if (day === 4 && now.getHours() >= 17) pid = 'jumma';
@@ -376,7 +412,6 @@
             return seq;
         }
 
-        // --- RENDERERS ---
         function renderApp() {
             renderHeader();
             renderListBar();
@@ -399,7 +434,7 @@
                 
                 container.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full pt-1">
-                        <div class="text-5xl font-mono font-bold text-gray-800 dark:text-white tracking-tighter leading-none">
+                        <div class="text-5xl font-mono font-bold text-gray-800 dark:text-white tracking-tighter leading-none flex items-baseline gap-1">
                             ${currentTimeDisplay}
                         </div>
                         ${isFriday ? `<div class="mt-1 bg-brand-50 text-brand-600 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest">It's Friday!</div>` : ''}
@@ -485,20 +520,30 @@
 
                     ${m.address ? `<div class="text-[10px] text-gray-500 bg-gray-50 dark:bg-gray-700/30 p-2 rounded-lg mb-3 line-clamp-2">${m.address}</div>` : ''}
 
-                    <div class="grid grid-cols-5 gap-1 text-center border-t border-gray-50 dark:border-gray-700 pt-3">
+                    <div class="grid grid-cols-2 gap-2 text-center border-t border-gray-50 dark:border-gray-700 pt-3">
                         ${['fajr','zuhr','asr','isha','jumma'].map(p => {
                             const t = m.timings && m.timings[p] && m.timings[p].time ? m.timings[p].time : null;
-                            const label = p.substring(0,3);
-                            if(!t) return `<div><div class="text-[8px] text-gray-300 uppercase font-bold mb-0.5">${label}</div><div class="text-xs font-bold text-gray-200">-</div></div>`;
+                            const pObj = prayersList.find(x => x.id === p);
+                            
+                            // Placeholder style for missing time
+                            if(!t) return `
+                                <div class="bg-gray-50 dark:bg-gray-800/50 rounded p-1.5 flex items-center justify-between opacity-50">
+                                    <div class="text-[10px] font-bold text-gray-400 flex items-center gap-1"><i class="fas ${pObj.icon} text-[8px]"></i> ${pObj.name}</div>
+                                    <div class="text-xs font-bold text-gray-300">-</div>
+                                </div>`;
+                                
                             const [h, mn] = t.split(':');
                             const suf = parseInt(h)>=12 ? 'PM':'AM';
                             const dis = `${parseInt(h)%12||12}:${mn}`;
+                            
                             return `
-                                <div>
-                                    <div class="text-[8px] text-gray-400 uppercase font-bold mb-0.5">${label}</div>
-                                    <div class="flex flex-col items-center leading-none">
+                                <div class="bg-gray-50 dark:bg-gray-700/30 rounded p-2 flex items-center justify-between border border-transparent hover:border-brand-200 transition-colors">
+                                    <div class="text-[10px] font-bold text-gray-500 dark:text-gray-400 flex items-center gap-1.5 uppercase tracking-wide">
+                                        <i class="fas ${pObj.icon} text-brand-400 text-[9px]"></i> ${pObj.name}
+                                    </div>
+                                    <div class="flex items-baseline gap-0.5">
                                         <span class="font-mono text-sm font-bold dark:text-white">${dis}</span>
-                                        <span class="text-[8px] text-gray-400 font-bold scale-75 origin-top">${suf}</span>
+                                        <span class="text-[8px] text-gray-400 font-bold">${suf}</span>
                                     </div>
                                 </div>`;
                         }).join('')}
