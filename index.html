@@ -226,21 +226,17 @@
         function renderListBar() { const listsToShow = ['Favorites', 'All', ...Array.from(allLists).filter(l => l!=='Favorites')]; document.getElementById('listBar').innerHTML = listsToShow.map(list => `<button onclick="switchList('${list}')" class="px-3 py-1.5 rounded-full text-[10px] font-bold transition-all whitespace-nowrap border ${currentList === list ? 'bg-brand-600 text-white border-brand-600 shadow-md' : 'bg-white dark:bg-gray-700 text-gray-500 border-gray-200 dark:border-gray-600'}">${list}</button>`).join(''); }
         function switchList(name) { currentList = name; renderApp(); renderListBar(); }
 
-        // --- NEW OPEN MODAL LOGIC (With Checkbox Chips) ---
         function openMosqueModal(id = null) { 
             document.getElementById('mosqueInfoModal').classList.remove('hidden'); 
             const isEdit = id !== null; 
             document.getElementById('mosqueModalTitle').innerText = isEdit ? 'Edit Mosque' : 'Add Mosque'; 
             document.getElementById('editMosqueId').value = id || ''; 
             
-            // Delete Button Handling
             const delBtn = document.getElementById('btnDeleteMosque'); 
             if(isEdit) delBtn.classList.remove('hidden');
             else delBtn.classList.add('hidden');
 
-            // Generate List Chips (Checkbox based)
             const container = document.getElementById('listChipsContainer');
-            
             let currentLists = ['Favorites'];
             if (isEdit) {
                 const m = mosques.find(x => x.id === id);
@@ -319,11 +315,9 @@
             const id = document.getElementById('editMosqueId').value; 
             const name = document.getElementById('m_name').value; 
             
-            // Get all checked boxes
             const checkedBoxes = document.querySelectorAll('#listChipsContainer input[type="checkbox"]:checked');
             let selected = Array.from(checkedBoxes).map(cb => cb.value);
             
-            // Handle new list tag input
             const newTag = document.getElementById('m_new_list').value.trim();
             if(newTag) {
                 selected.push(newTag);
@@ -410,12 +404,28 @@
         }
 
         function renderNextPrayerMode(container) {
-            const sequence = getSequence(); let html = '';
+            const sequence = getSequence(); 
+            let html = '';
+            let hasRenderedFirst = false;
+
             sequence.forEach((pid, index) => {
-                const isFirst = index === 0; const pObj = prayersList.find(p=>p.id===pid); const pName = pObj?.name || pid;
+                const pObj = prayersList.find(p=>p.id===pid); const pName = pObj?.name || pid;
                 let list = mosques.filter(m => m.lists.includes(currentList) || currentList === 'All');
                 
                 list = list.filter(m => m.timings && m.timings[pid] && m.timings[pid].time);
+
+                // --- CHANGED: Filter logic for PAST prayers ---
+                // Only for the first item in the sequence (the current "active" window), 
+                // filter out mosques where the time has already passed today.
+                if (index === 0) {
+                    const now = new Date();
+                    const nowMins = now.getHours() * 60 + now.getMinutes();
+                    list = list.filter(m => {
+                        const [h, mn] = m.timings[pid].time.split(':');
+                        const mTime = parseInt(h) * 60 + parseInt(mn);
+                        return mTime > nowMins;
+                    });
+                }
                 
                 list.sort((a, b) => {
                     const tA = a.timings[pid]?.time || '00:00';
@@ -424,6 +434,11 @@
                 });
 
                 if (list.length === 0) return;
+
+                // Use visual index to determine styling color, not logical index
+                const isFirst = !hasRenderedFirst;
+                if(isFirst) hasRenderedFirst = true;
+
                 html += `<div class="mt-6 mb-2 flex items-center gap-2 px-1"><i class="fas ${pObj?.icon||'fa-clock'} text-xs ${isFirst ? 'text-brand-500' : 'text-gray-400'}"></i><h3 class="text-xs font-bold uppercase tracking-widest ${isFirst ? 'text-brand-600 dark:text-brand-400' : 'text-gray-400'}">${pName}</h3></div><div class="space-y-1">`;
                 html += list.map(m => {
                     const t = m.timings[pid]; const [h, mns] = t.time.split(':'); const numTime = `${parseInt(h)%12||12}:${mns}`; const suff = parseInt(h)>=12 ? 'PM' : 'AM';
@@ -443,6 +458,22 @@
         }
 
         function createAdminCard(m) {
+            // --- CHANGED: Notes Section now collapsible and at bottom ---
+            let notesSection = '';
+            if (m.address) {
+                notesSection = `
+                    <div class="border-t border-gray-50 dark:border-gray-700 mt-2 pt-2">
+                        <button onclick="toggleNotes('${m.id}')" class="w-full flex justify-between items-center text-[10px] font-bold text-gray-400 hover:text-brand-600 transition-colors py-1">
+                            <span class="uppercase tracking-wider">Notes</span>
+                            <i id="chevron_notes_${m.id}" class="fas fa-chevron-down transition-transform duration-200"></i>
+                        </button>
+                        <div id="notes_${m.id}" class="hidden text-[10px] text-gray-500 bg-gray-50 dark:bg-gray-700/30 p-2 rounded-lg mt-2 whitespace-pre-line leading-relaxed">
+                            ${m.address}
+                        </div>
+                    </div>
+                `;
+            }
+
             return `
                 <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border-l-[3px] border-r-[3px] border-l-brand-500 border-r-gray-100 dark:border-r-gray-700 mb-3 relative group animate-card">
                      <div class="flex justify-between items-start mb-3 pl-1">
@@ -454,7 +485,7 @@
                             <button onclick="openMosqueModal('${m.id}')" class="w-6 h-6 text-brand-600 hover:bg-white dark:hover:bg-gray-600 rounded flex items-center justify-center"><i class="fas fa-pencil-alt text-xs"></i></button>
                         </div>
                     </div>
-                    ${m.address ? `<div class="text-[10px] text-gray-500 bg-gray-50 dark:bg-gray-700/30 p-2 rounded-lg mb-3 line-clamp-2">${m.address}</div>` : ''}
+                    
                     <div class="grid grid-cols-5 gap-0.5 text-center border-t border-gray-50 dark:border-gray-700 pt-3">
                         ${['fajr','zuhr','asr','isha','jumma'].map(p => {
                             const t = m.timings && m.timings[p] && m.timings[p].time ? m.timings[p].time : null;
@@ -465,8 +496,19 @@
                             return `<div onclick="openEditTiming('${m.id}')" class="flex flex-col items-center group/time hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded py-1 transition-colors cursor-pointer"><div class="text-[8px] font-bold text-gray-400 mb-1 flex flex-col items-center gap-0.5 text-brand-500/80"><i class="fas ${pObj.icon} text-[10px] mb-0.5"></i> ${label}</div><div class="flex flex-col items-center leading-none"><span class="font-mono text-sm font-bold dark:text-white tracking-tight">${dis}</span><span class="text-[8px] text-gray-400 font-bold scale-75 origin-top mt-0.5">${suf}</span></div></div>`;
                         }).join('')}
                     </div>
+                    
+                    ${notesSection}
+
                     ${m.locationLink ? `<a href="${m.locationLink}" target="_blank" class="absolute right-4 bottom-3 text-brand-600 text-xs"><i class="fas fa-location-arrow"></i></a>` : ''}
                 </div>`;
+        }
+
+        // --- NEW HELPER FOR NOTES TOGGLE ---
+        function toggleNotes(id) {
+            const el = document.getElementById(`notes_${id}`);
+            const chev = document.getElementById(`chevron_notes_${id}`);
+            el.classList.toggle('hidden');
+            chev.classList.toggle('rotate-180');
         }
 
         // ... (Boilerplate Utils) ...
