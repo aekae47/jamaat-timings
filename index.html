@@ -71,7 +71,7 @@
                 </div>
             </div>
             <div class="pt-4 border-t border-gray-100 dark:border-gray-700">
-                <button onclick="exportCSV()" class="w-full flex items-center justify-center gap-2 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"><i class="fas fa-download"></i> Backup Data (CSV)</button>
+                <button onclick="emergencyReset()" class="w-full flex items-center justify-center gap-2 py-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold hover:bg-red-200 transition-colors"><i class="fas fa-trash-alt"></i> Hard Reset App</button>
             </div>
         </div>
     </div>
@@ -99,10 +99,12 @@
             <i class="fas fa-circle-notch fa-spin text-2xl mb-3 text-brand-300"></i>
             <p class="text-xs font-bold uppercase tracking-widest opacity-50">Starting...</p>
         </div>
-        <div id="errorState" class="hidden text-center mt-32 text-red-400 flex flex-col items-center px-6">
-            <i class="fas fa-exclamation-triangle text-2xl mb-3"></i>
-            <p class="text-xs font-bold uppercase tracking-widest opacity-70 mb-2">Something went wrong</p>
-            <p class="text-[10px] text-gray-500" id="errorMessage">Please refresh.</p>
+        
+        <div id="safetyResetContainer" class="hidden text-center mt-6">
+            <p class="text-xs text-gray-400 mb-2">Taking too long?</p>
+            <button onclick="emergencyReset()" class="bg-red-500 text-white px-6 py-2 rounded-full text-xs font-bold shadow-lg animate-pulse">
+                Reset App Data
+            </button>
         </div>
     </div>
 
@@ -188,13 +190,27 @@
 
         let viewMode = 'next', currentList = 'Favorites', searchQuery = '', mosques = [], allLists = new Set(['Favorites', 'Home', 'Work']);
         let editingTimingsId = null, currentDetailId = null, currentTimeDisplay = '', currentTargetPrayer = 'fajr';
-        let appSettings = JSON.parse(localStorage.getItem('appSettings')) || { ramadan: false, eidFitr: false, eidAdha: false, lateIsha: false, theme: 'light' };
+        
+        // --- SAFE SETTINGS LOADER ---
+        let appSettings = { ramadan: false, eidFitr: false, eidAdha: false, lateIsha: false, theme: 'light' };
+        try {
+            const saved = localStorage.getItem('appSettings');
+            if(saved) appSettings = JSON.parse(saved);
+        } catch(e) { console.warn("Settings corrupted, resetting"); localStorage.removeItem('appSettings'); }
 
         const prayersList = [ { id: 'fajr', name: 'Fajr', icon: 'fa-cloud-sun' }, { id: 'zuhr', name: 'Zuhr', icon: 'fa-sun' }, { id: 'asr', name: 'Asr', icon: 'fa-cloud' }, { id: 'isha', name: 'Isha', icon: 'fa-moon' }, { id: 'jumma', name: 'Jumma', icon: 'fa-users' } ];
         const sequenceOrder = ['fajr', 'zuhr', 'asr', 'isha']; 
         const specialPrayersList = [ { id: 'taraweeh', name: 'Taraweeh', type: 'parahs', mode: 'ramadan' }, { id: 'eidFitr', name: 'Eid-ul-Fitr', mode: 'eidFitr' }, { id: 'eidAdha', name: 'Eid-ul-Adha', mode: 'eidAdha' }, { id: 'lateIsha', name: 'Late Isha', mode: 'lateIsha' } ];
 
         function init() {
+            // Safety timeout: If app hangs on start, show reset button
+            setTimeout(() => {
+                const loading = document.getElementById('loadingState');
+                if(loading && !loading.classList.contains('hidden')) {
+                    document.getElementById('safetyResetContainer').classList.remove('hidden');
+                }
+            }, 5000);
+
             if(appSettings.theme === 'dark') document.documentElement.classList.add('dark');
             document.getElementById('theme_toggle').checked = appSettings.theme === 'dark';
             updateSidebarToggles(); updateClock(); setInterval(updateClock, 1000);
@@ -212,11 +228,20 @@
             });
         }
 
+        function emergencyReset() {
+            if(confirm("This will fix the stuck screen by resetting local settings. Your data in the cloud is safe. Proceed?")) {
+                localStorage.clear();
+                window.location.reload();
+            }
+        }
+
         function loadData() {
             db.collection('mosques').onSnapshot(async (snapshot) => {
+                // HIDE LOADING SPINNER
+                document.getElementById('loadingState').classList.add('hidden');
+                
                 if (snapshot.empty) {
                     mosques = [];
-                    renderApp();
                 } else {
                     mosques = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     mosques.forEach(m => {
@@ -225,13 +250,12 @@
                         m.lists.forEach(l => allLists.add(l));
                     });
                     mosques.sort((a, b) => (a.order || 0) - (b.order || 0));
-                    renderApp();
                 }
+                renderApp();
             }, (error) => {
-                console.error("Data load error:", error);
-                document.getElementById('loadingState').classList.add('hidden');
-                document.getElementById('errorState').classList.remove('hidden');
-                document.getElementById('errorMessage').innerText = error.message || "Connection failed";
+                console.error("Firebase Error:", error);
+                // Show reset button on error too
+                document.getElementById('loadingState').innerHTML = `<div class="text-red-500">Connection Error. <br> <button onclick="emergencyReset()" class="underline mt-2">Reset</button></div>`;
             });
         }
 
@@ -269,34 +293,20 @@
             const m = mosques.find(x => x.id === id);
             if (!m) return;
             currentDetailId = id;
-            
             document.getElementById('detail_name').innerText = m.name;
             document.getElementById('detail_area').innerText = m.area;
-            
             const container = document.getElementById('detail_timings');
             const allPrayers = [...prayersList, ...specialPrayersList.filter(sp => appSettings[sp.mode] !== false)];
-            
             container.innerHTML = allPrayers.map(p => {
                 const tData = m.timings ? m.timings[p.id] : null;
                 const timeStr = tData && tData.time ? formatTime12(tData.time) : '--:--';
                 const isNull = !tData || !tData.time;
                 const lastUpdatedStr = (!isNull && tData && !tData.fixed && tData.lastUpdated) ? `<span class="text-[9px] text-gray-400 font-normal ml-2">${formatDateShort(tData.lastUpdated)}</span>` : '';
-                
-                return `
-                    <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                        <span class="text-xs font-bold uppercase ${isNull ? 'text-gray-300 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400'}">${p.name}</span>
-                        <div class="flex items-center">
-                            ${lastUpdatedStr}
-                            <span class="font-mono font-bold ${isNull ? 'text-gray-300 dark:text-gray-600' : 'text-gray-800 dark:text-white'} ml-2">${timeStr}</span>
-                        </div>
-                    </div>
-                `;
+                return `<div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700 last:border-0"><span class="text-xs font-bold uppercase ${isNull ? 'text-gray-300 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400'}">${p.name}</span><div class="flex items-center">${lastUpdatedStr}<span class="font-mono font-bold ${isNull ? 'text-gray-300 dark:text-gray-600' : 'text-gray-800 dark:text-white'} ml-2">${timeStr}</span></div></div>`;
             }).join('');
-            
             if(m.address) {
                 container.innerHTML += `<div class="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 mt-6 border border-gray-100 dark:border-gray-600"><h4 class="text-[10px] font-bold text-gray-400 uppercase mb-2 tracking-wider">Notes</h4><p class="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed">${m.address}</p></div>`;
             }
-
             document.getElementById('mosqueDetailModal').classList.remove('hidden');
         }
 
@@ -320,7 +330,7 @@
                     setTimeout(() => openEditTiming(docRef.id), 500); 
                 } 
                 showToast(); renderListBar();
-            } catch(e) { console.error(e); } 
+            } catch(e) { console.error(e); alert("Failed to save: " + e.message); } 
         }
 
         function updateClock() {
@@ -368,8 +378,6 @@
                 updateNavState(); 
             } catch (e) {
                 console.error("Render error", e);
-                // Fallback to avoid white screen
-                document.getElementById('mainContainer').innerHTML = `<div class="text-center mt-20 text-red-400 text-xs">Error: ${e.message}</div>`;
             }
         }
 
@@ -393,6 +401,16 @@
             const sequence = getSequence(); 
             let html = '';
             let hasRenderedFirst = false;
+
+            // Empty state handling
+            if(mosques.length === 0) {
+                 container.innerHTML = `<div class="text-center mt-20 text-gray-400">
+                    <i class="fas fa-mosque text-4xl mb-4 text-gray-300"></i>
+                    <p class="text-sm font-bold">No Mosques added yet.</p>
+                    <button onclick="openMosqueModal()" class="mt-4 px-6 py-2 bg-brand-600 text-white rounded-lg text-xs font-bold">Add One</button>
+                 </div>`;
+                 return;
+            }
 
             sequence.forEach((pid, index) => {
                 const pObj = prayersList.find(p=>p.id===pid); const pName = pObj?.name || pid;
@@ -442,7 +460,14 @@
             let filtered = mosques;
             if(currentList !== 'All') filtered = filtered.filter(m => m.lists.includes(currentList));
             if(searchQuery) filtered = filtered.filter(m => m.name.toLowerCase().includes(searchQuery) || m.area.toLowerCase().includes(searchQuery));
-            if(filtered.length === 0) { container.innerHTML = `<div class="text-center mt-20 text-gray-400 text-xs">No mosques found.</div>`; return; }
+            
+            if(filtered.length === 0) { 
+                 container.innerHTML = `<div class="text-center mt-20 text-gray-400">
+                    <i class="fas fa-search text-4xl mb-4 text-gray-300"></i>
+                    <p class="text-sm font-bold">No mosques found.</p>
+                 </div>`;
+                 return; 
+            }
             container.innerHTML = filtered.map(m => createAdminCard(m)).join('');
         }
 
