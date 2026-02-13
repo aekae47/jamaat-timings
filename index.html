@@ -253,13 +253,25 @@
             const dirBtn = document.getElementById('detail_directions'); 
             if(m.locationLink) { dirBtn.href = m.locationLink; dirBtn.classList.remove('hidden'); } else { dirBtn.classList.add('hidden'); } 
             document.getElementById('detail_timings').onclick = function() { openEditTiming(id); };
+            
             const displayOrder = ['fajr', 'zuhr', 'jumma', 'asr', 'isha']; 
             document.getElementById('detail_timings').innerHTML = displayOrder.map(pid => { 
-                const data = m.timings[pid]; if(!data || !data.time) return ''; 
+                const data = m.timings[pid]; 
+                const hasTime = data && data.time;
                 const name = prayersList.find(p => p.id === pid)?.name || pid; 
                 const icon = prayersList.find(p => p.id === pid)?.icon || 'fa-clock'; 
-                const dateStamp = (!data.fixed && data.lastUpdated) ? `<div class="text-[8px] text-gray-300 mt-0.5">${formatUpdateDate(data.lastUpdated)}</div>` : ''; 
-                return `<div class="flex justify-between items-center p-3.5 rounded-xl mb-2 bg-gray-50 border border-gray-100 dark:bg-gray-700/30 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"><span class="font-bold text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2"><i class="fas ${icon} text-xs w-4"></i> ${name}</span><div class="text-right"><span class="font-mono text-lg font-bold text-gray-800 dark:text-white">${formatTime12(data.time)}</span>${dateStamp}</div></div>`; 
+                const dateStamp = (!data?.fixed && data?.lastUpdated) ? `<div class="text-[8px] text-gray-300 mt-0.5">${formatUpdateDate(data.lastUpdated)}</div>` : ''; 
+                
+                return `
+                <div class="flex justify-between items-center p-3.5 rounded-xl mb-2 bg-gray-50 border border-gray-100 dark:bg-gray-700/30 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${!hasTime ? 'opacity-40' : ''}">
+                    <span class="font-bold text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                        <i class="fas ${icon} text-xs w-4"></i> ${name}
+                    </span>
+                    <div class="text-right">
+                        <span class="font-mono text-lg font-bold text-gray-800 dark:text-white">${hasTime ? formatTime12(data.time) : '--:--'}</span>
+                        ${hasTime ? dateStamp : ''}
+                    </div>
+                </div>`; 
             }).join('') + specialPrayersList.map(sp => { 
                 if(sp.mode && !appSettings[sp.mode]) return ''; const data = m.timings[sp.id]; if(!data || !data.time) return ''; 
                 return `<div class="flex justify-between items-center p-3.5 rounded-xl bg-amber-50 border border-amber-100 dark:bg-amber-900/20 dark:border-amber-800 mt-2"><span class="font-bold text-sm text-amber-700 dark:text-amber-500"><i class="fas fa-star text-xs mr-2"></i> ${sp.name}</span><span class="font-mono text-lg font-bold text-gray-800 dark:text-white">${formatTime12(data.time)}</span></div>`; 
