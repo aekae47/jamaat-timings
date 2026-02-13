@@ -93,7 +93,7 @@
             </div>
         </div>
         <div id="headerSearchView" class="hidden px-4 pb-2">
-            <div class="relative"><i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i><input type="text" id="searchInput" onkeyup="handleSearch()" placeholder="Search..." class="w-full bg-gray-100 dark:bg-gray-700/50 border-none rounded-lg py-2 pl-9 pr-4 text-xs font-bold outline-none dark:text-white transition-all focus:ring-2 focus:ring-brand-500"></div>
+            <div class="relative"><i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i><input type="text" id="searchInput" oninput="handleSearch()" placeholder="Search..." class="w-full bg-gray-100 dark:bg-gray-700/50 border-none rounded-lg py-2 pl-9 pr-4 text-xs font-bold outline-none dark:text-white transition-all focus:ring-2 focus:ring-brand-500"></div>
         </div>
         <div id="filterBarContainer" class="w-full border-t border-gray-50 dark:border-gray-700/50 transition-all duration-300 overflow-hidden max-h-12"><div class="flex overflow-x-auto no-scrollbar px-3 py-2 gap-2" id="listBar"></div></div>
     </div>
@@ -169,8 +169,10 @@
     </div>
 
     <div id="toast" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-2xl opacity-0 transition-all duration-300 z-50 pointer-events-none translate-y-4"><i class="fas fa-check-circle text-brand-400 mr-2"></i><span>Saved</span></div>
+    
     <div id="shareModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4"><div class="bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl w-full max-w-sm p-6 shadow-2xl h-[70vh] flex flex-col animate-card"><div class="flex justify-between items-center mb-6"><h3 class="text-xl font-extrabold dark:text-white">Share Schedule</h3><button onclick="closeModal('shareModal')" class="text-gray-400"><i class="fas fa-times text-lg"></i></button></div><div class="flex-1 overflow-y-auto no-scrollbar space-y-6"><div><h4 class="text-[10px] font-bold uppercase text-gray-400 mb-3 tracking-wider">Prayers</h4><div class="flex flex-wrap gap-2" id="sharePrayerSelectors"></div></div><div><h4 class="text-[10px] font-bold uppercase text-gray-400 mb-3 tracking-wider">Mosques</h4><div class="space-y-2" id="shareMosqueSelectors"></div></div></div><button onclick="generateShareImage()" class="mt-4 w-full py-3.5 bg-brand-600 text-white rounded-xl font-bold shadow-lg">Generate Image</button></div></div>
-    <div id="captureArea" class="fixed top-0 left-0 bg-white p-8 w-[600px] z-[-1] invisible font-sans"><div class="text-center mb-6 border-b-4 border-brand-500 pb-4"><h2 class="text-3xl font-extrabold text-gray-800 tracking-tight">Jamaat Timings</h2><p class="text-sm font-bold text-gray-500 mt-1 uppercase tracking-widest" id="captureDate"></p></div><div id="captureContent" class="space-y-4"></div><div class="mt-6 text-center text-xs font-bold text-gray-400">Compiled by AK</div></div>
+    
+    <div id="captureArea" class="fixed top-0 left-[-9999px] bg-white p-8 w-[600px] z-[-1] font-sans"><div class="text-center mb-6 border-b-4 border-brand-500 pb-4"><h2 class="text-3xl font-extrabold text-gray-800 tracking-tight">Jamaat Timings</h2><p class="text-sm font-bold text-gray-500 mt-1 uppercase tracking-widest" id="captureDate"></p></div><div id="captureContent" class="space-y-4"></div><div class="mt-6 text-center text-xs font-bold text-gray-400">Compiled by AK</div></div>
 
     <script>
         const firebaseConfig = { apiKey: "AIzaSyAEzXz42Zih7M6yY97_4e8_E1BNsjbJhnI", authDomain: "timings-ak.firebaseapp.com", projectId: "timings-ak", storageBucket: "timings-ak.firebasestorage.app", messagingSenderId: "1082790063422", appId: "1:1082790063422:web:be439e3d932475a9fe906f" };
@@ -195,6 +197,9 @@
             if(appSettings.theme === 'dark') document.documentElement.classList.add('dark');
             document.getElementById('theme_toggle').checked = appSettings.theme === 'dark';
             updateSidebarToggles(); updateClock(); setInterval(updateClock, 1000);
+            
+            setupShareModal(); // FIXED: Missing call to setup share modal
+            
             loadData();
             let lastScroll = 0;
             window.addEventListener('scroll', () => {
@@ -225,7 +230,7 @@
         function renderListBar() { const listsToShow = ['Favorites', 'All', ...Array.from(allLists).filter(l => l!=='Favorites')]; document.getElementById('listBar').innerHTML = listsToShow.map(list => `<button onclick="switchList('${list}')" class="px-3 py-1.5 rounded-full text-[10px] font-bold transition-all whitespace-nowrap border ${currentList === list ? 'bg-brand-600 text-white border-brand-600 shadow-md' : 'bg-white dark:bg-gray-700 text-gray-500 border-gray-200 dark:border-gray-600'}">${list}</button>`).join(''); }
         function switchList(name) { currentList = name; renderApp(); renderListBar(); }
 
-        // --- NEW OPEN MODAL LOGIC (FIXED) ---
+        // --- NEW OPEN MODAL LOGIC ---
         function openMosqueModal(id = null) { 
             document.getElementById('mosqueInfoModal').classList.remove('hidden'); 
             const isEdit = id !== null; 
@@ -260,15 +265,49 @@
                     });
                 }
             } else {
-    const nameInput = document.getElementById('m_name');
-    nameInput.value = 'Masjid-e-';
-    nameInput.focus();
-    nameInput.setSelectionRange(nameInput.value.length, nameInput.value.length);
+                const nameInput = document.getElementById('m_name');
+                nameInput.value = 'Masjid-e-';
+                nameInput.focus();
+                nameInput.setSelectionRange(nameInput.value.length, nameInput.value.length);
+                document.getElementById('m_area').value = '';
+                document.getElementById('m_link').value = '';
+                document.getElementById('m_notes').value = '';
+            }
+        }
 
-    document.getElementById('m_area').value = '';
-    document.getElementById('m_link').value = '';
-    document.getElementById('m_notes').value = '';
-}
+        // FIXED: Missing function openMosqueDetail added
+        function openMosqueDetail(id) {
+            const m = mosques.find(x => x.id === id);
+            if (!m) return;
+            currentDetailId = id;
+            
+            document.getElementById('detail_name').innerText = m.name;
+            document.getElementById('detail_area').innerText = m.area;
+            document.getElementById('detail_notes').innerText = m.address || 'No notes available.';
+            
+            const dirBtn = document.getElementById('detail_directions');
+            if (m.locationLink) {
+                dirBtn.href = m.locationLink;
+                dirBtn.classList.remove('hidden');
+            } else {
+                dirBtn.classList.add('hidden');
+            }
+
+            const container = document.getElementById('detail_timings');
+            const allPrayers = [...prayersList, ...specialPrayersList.filter(sp => appSettings[sp.mode] !== false)];
+            
+            container.innerHTML = allPrayers.map(p => {
+                const t = m.timings && m.timings[p.id] ? m.timings[p.id].time : null;
+                if (!t) return '';
+                return `
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                        <span class="text-xs font-bold text-gray-500 uppercase">${p.name}</span>
+                        <span class="font-mono font-bold text-gray-800 dark:text-white">${formatTime12(t)}</span>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('mosqueDetailModal').classList.remove('hidden');
         }
 
         async function saveMosqueInfo() { 
@@ -351,8 +390,17 @@
             sequence.forEach((pid, index) => {
                 const isFirst = index === 0; const pObj = prayersList.find(p=>p.id===pid); const pName = pObj?.name || pid;
                 let list = mosques.filter(m => m.lists.includes(currentList) || currentList === 'All');
-                list = list.filter(m => m.timings && m.timings[pid]?.time);
-                list.sort((a, b) => a.timings[pid].time.localeCompare(b.timings[pid].time));
+                
+                // FIXED: Safety check to prevent crashing on undefined timings
+                list = list.filter(m => m.timings && m.timings[pid] && m.timings[pid].time);
+                
+                // FIXED: Safety check inside sort
+                list.sort((a, b) => {
+                    const tA = a.timings[pid]?.time || '00:00';
+                    const tB = b.timings[pid]?.time || '00:00';
+                    return tA.localeCompare(tB);
+                });
+
                 if (list.length === 0) return;
                 html += `<div class="mt-6 mb-2 flex items-center gap-2 px-1"><i class="fas ${pObj?.icon||'fa-clock'} text-xs ${isFirst ? 'text-brand-500' : 'text-gray-400'}"></i><h3 class="text-xs font-bold uppercase tracking-widest ${isFirst ? 'text-brand-600 dark:text-brand-400' : 'text-gray-400'}">${pName}</h3></div><div class="space-y-1">`;
                 html += list.map(m => {
@@ -422,7 +470,36 @@
         function isTimeInRange(target24, filter24) { if (!target24 || !filter24) return false; const tMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; }; return Math.abs(tMin(target24) - tMin(filter24)) <= 15; }
         function setupShareModal() { document.getElementById('sharePrayerSelectors').innerHTML = prayersList.map(p => `<label class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg border border-gray-100 dark:border-gray-600 cursor-pointer select-none"><input type="checkbox" value="${p.id}" checked class="accent-brand-600 w-3.5 h-3.5"> <span class="text-xs font-bold dark:text-gray-200">${p.name}</span></label>`).join(''); }
         function openShareModal() { const listMosques = mosques.filter(m => m.lists && m.lists.includes(currentList)); document.getElementById('shareMosqueSelectors').innerHTML = listMosques.map(m => `<label class="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-600 transition-colors"><input type="checkbox" value="${m.id}" checked class="w-4 h-4 accent-brand-600 rounded"><span class="text-sm font-bold dark:text-gray-200">${m.name}</span></label>`).join(''); document.getElementById('shareModal').classList.remove('hidden'); }
-        async function generateShareImage() { const selectedPrayers = Array.from(document.querySelectorAll('#sharePrayerSelectors input:checked')).map(i => i.value); const selectedMosqueIds = Array.from(document.querySelectorAll('#shareMosqueSelectors input:checked')).map(i => i.value); const captureContent = document.getElementById('captureContent'); captureContent.innerHTML = ''; document.getElementById('captureDate').innerText = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); const table = document.createElement('table'); table.className = "w-full text-sm border-collapse"; let headerHTML = `<tr class="bg-brand-600 text-white"><th class="p-3 text-left rounded-tl-lg text-xs uppercase tracking-wider">Mosque</th>`; selectedPrayers.forEach((p, idx) => { const name = prayersList.find(x => x.id === p).name; headerHTML += `<th class="p-3 text-center text-xs ${idx === selectedPrayers.length - 1 ? 'rounded-tr-lg' : ''}">${name}</th>`; }); headerHTML += `</tr>`; let bodyHTML = ''; selectedMosqueIds.forEach((id, idx) => { const m = mosques.find(x => x.id === id); bodyHTML += `<tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} border-b border-gray-100">`; bodyHTML += `<td class="p-3 font-bold text-gray-700 text-xs">${m.name}</td>`; selectedPrayers.forEach(p => { const timeStr = m.timings[p]?.time ? formatTime12(m.timings[p].time).replace(/<[^>]*>/g, '') : '--:--'; bodyHTML += `<td class="p-3 text-center font-mono font-bold text-gray-800 text-xs">${timeStr}</td>`; }); bodyHTML += `</tr>`; }); table.innerHTML = headerHTML + bodyHTML; captureContent.appendChild(table); const captureArea = document.getElementById('captureArea'); captureArea.classList.remove('invisible'); captureArea.style.zIndex = "9999"; try { const canvas = await html2canvas(captureArea, { scale: 2 }); const link = document.createElement('a'); link.download = `Jamaat_Timings_${Date.now()}.png`; link.href = canvas.toDataURL(); link.click(); } catch (err) { console.error("Screenshot failed", err); } finally { captureArea.classList.add('invisible'); captureArea.style.zIndex = "-1"; closeModal('shareModal'); } }
+        async function generateShareImage() { 
+            const selectedPrayers = Array.from(document.querySelectorAll('#sharePrayerSelectors input:checked')).map(i => i.value); 
+            const selectedMosqueIds = Array.from(document.querySelectorAll('#shareMosqueSelectors input:checked')).map(i => i.value); 
+            const captureContent = document.getElementById('captureContent'); 
+            captureContent.innerHTML = ''; 
+            document.getElementById('captureDate').innerText = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); 
+            const table = document.createElement('table'); 
+            table.className = "w-full text-sm border-collapse"; 
+            let headerHTML = `<tr class="bg-brand-600 text-white"><th class="p-3 text-left rounded-tl-lg text-xs uppercase tracking-wider">Mosque</th>`; 
+            selectedPrayers.forEach((p, idx) => { const name = prayersList.find(x => x.id === p).name; headerHTML += `<th class="p-3 text-center text-xs ${idx === selectedPrayers.length - 1 ? 'rounded-tr-lg' : ''}">${name}</th>`; }); 
+            headerHTML += `</tr>`; 
+            let bodyHTML = ''; 
+            selectedMosqueIds.forEach((id, idx) => { 
+                const m = mosques.find(x => x.id === id); 
+                if(!m) return; // Safety check
+                bodyHTML += `<tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} border-b border-gray-100">`; 
+                bodyHTML += `<td class="p-3 font-bold text-gray-700 text-xs text-left">${m.name}</td>`; 
+                selectedPrayers.forEach(pid => { 
+                    const t = m.timings[pid];
+                    const timeStr = t && t.time ? formatTime12(t.time).replace(/<[^>]*>/g, '') : '--:--'; 
+                    bodyHTML += `<td class="p-3 text-center font-mono font-bold text-gray-800 text-xs">${timeStr}</td>`; 
+                }); 
+                bodyHTML += `</tr>`; 
+            }); 
+            table.innerHTML = headerHTML + bodyHTML; 
+            captureContent.appendChild(table); 
+            const captureArea = document.getElementById('captureArea'); 
+            captureArea.style.zIndex = "9999"; 
+            try { const canvas = await html2canvas(captureArea, { scale: 2 }); const link = document.createElement('a'); link.download = `Jamaat_Timings_${Date.now()}.png`; link.href = canvas.toDataURL(); link.click(); } catch (err) { console.error("Screenshot failed", err); } finally { captureArea.style.zIndex = "-1"; closeModal('shareModal'); } 
+        }
 
         init();
     </script>
