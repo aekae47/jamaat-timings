@@ -95,7 +95,15 @@
     </div>
 
     <div class="pt-[160px] pb-24 max-w-md mx-auto min-h-screen px-3" id="mainContainer">
-        <div class="text-center mt-32 text-gray-400 flex flex-col items-center"><i class="fas fa-circle-notch fa-spin text-2xl mb-3 text-brand-300"></i><p class="text-xs font-bold uppercase tracking-widest opacity-50">Starting...</p></div>
+        <div class="text-center mt-32 text-gray-400 flex flex-col items-center" id="loadingState">
+            <i class="fas fa-circle-notch fa-spin text-2xl mb-3 text-brand-300"></i>
+            <p class="text-xs font-bold uppercase tracking-widest opacity-50">Starting...</p>
+        </div>
+        <div id="errorState" class="hidden text-center mt-32 text-red-400 flex flex-col items-center px-6">
+            <i class="fas fa-exclamation-triangle text-2xl mb-3"></i>
+            <p class="text-xs font-bold uppercase tracking-widest opacity-70 mb-2">Something went wrong</p>
+            <p class="text-[10px] text-gray-500" id="errorMessage">Please refresh.</p>
+        </div>
     </div>
 
     <button id="btnAddFloating" onclick="openMosqueModal()" class="hidden fixed bottom-20 right-4 w-14 h-14 bg-brand-600 text-white rounded-full shadow-2xl shadow-brand-500/40 flex items-center justify-center z-40 hover:scale-105 transition-transform"><i class="fas fa-plus text-xl"></i></button>
@@ -116,7 +124,7 @@
             </div>
             <div class="flex-1 overflow-y-auto no-scrollbar p-5">
                 <div id="detail_timings" class="space-y-2 mb-6 cursor-pointer" onclick="openEditTiming(currentDetailId)" title="Tap to Edit"></div>
-                </div>
+            </div>
             <div class="p-4 border-t border-gray-100 dark:border-gray-700"><button onclick="closeModal('mosqueDetailModal')" class="w-full py-3 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-xl text-xs hover:bg-gray-200 dark:hover:bg-gray-600">CLOSE</button></div>
         </div>
     </div>
@@ -197,6 +205,7 @@
             window.addEventListener('scroll', () => {
                 const currentScroll = window.pageYOffset;
                 const filterBar = document.getElementById('filterBarContainer');
+                if(!filterBar) return;
                 if (currentScroll > 50 && currentScroll > lastScroll) { filterBar.style.height = '0px'; filterBar.style.opacity = '0'; } 
                 else { filterBar.style.height = 'auto'; filterBar.style.opacity = '1'; }
                 lastScroll = currentScroll;
@@ -205,8 +214,10 @@
 
         function loadData() {
             db.collection('mosques').onSnapshot(async (snapshot) => {
-                if (snapshot.empty) renderApp();
-                else {
+                if (snapshot.empty) {
+                    mosques = [];
+                    renderApp();
+                } else {
                     mosques = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     mosques.forEach(m => {
                         if(!m.timings) m.timings={}; 
@@ -216,10 +227,20 @@
                     mosques.sort((a, b) => (a.order || 0) - (b.order || 0));
                     renderApp();
                 }
+            }, (error) => {
+                console.error("Data load error:", error);
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('errorState').classList.remove('hidden');
+                document.getElementById('errorMessage').innerText = error.message || "Connection failed";
             });
         }
 
-        function renderListBar() { const listsToShow = ['Favorites', 'All', ...Array.from(allLists).filter(l => l!=='Favorites')]; document.getElementById('listBar').innerHTML = listsToShow.map(list => `<button onclick="switchList('${list}')" class="px-3 py-1.5 rounded-full text-[10px] font-bold transition-all whitespace-nowrap border ${currentList === list ? 'bg-brand-600 text-white border-brand-600 shadow-md' : 'bg-white dark:bg-gray-700 text-gray-500 border-gray-200 dark:border-gray-600'}">${list}</button>`).join(''); }
+        function renderListBar() { 
+            const el = document.getElementById('listBar');
+            if(!el) return;
+            const listsToShow = ['Favorites', 'All', ...Array.from(allLists).filter(l => l!=='Favorites')]; 
+            el.innerHTML = listsToShow.map(list => `<button onclick="switchList('${list}')" class="px-3 py-1.5 rounded-full text-[10px] font-bold transition-all whitespace-nowrap border ${currentList === list ? 'bg-brand-600 text-white border-brand-600 shadow-md' : 'bg-white dark:bg-gray-700 text-gray-500 border-gray-200 dark:border-gray-600'}">${list}</button>`).join(''); 
+        }
         function switchList(name) { currentList = name; renderApp(); renderListBar(); }
 
         function openMosqueModal(id = null) { 
@@ -252,13 +273,9 @@
             document.getElementById('detail_name').innerText = m.name;
             document.getElementById('detail_area').innerText = m.area;
             
-            // Note: detail_notes element is used in the notes section in the card, handled below if needed, 
-            // but for detail view, user requested uniform UI.
-            
             const container = document.getElementById('detail_timings');
             const allPrayers = [...prayersList, ...specialPrayersList.filter(sp => appSettings[sp.mode] !== false)];
             
-            // --- UPDATED: Show ALL prayers, dull color if null ---
             container.innerHTML = allPrayers.map(p => {
                 const tData = m.timings ? m.timings[p.id] : null;
                 const timeStr = tData && tData.time ? formatTime12(tData.time) : '--:--';
@@ -276,13 +293,9 @@
                 `;
             }).join('');
             
-            // Add notes section if exists in detail modal
-             if(m.address) {
+            if(m.address) {
                 container.innerHTML += `<div class="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 mt-6 border border-gray-100 dark:border-gray-600"><h4 class="text-[10px] font-bold text-gray-400 uppercase mb-2 tracking-wider">Notes</h4><p class="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed">${m.address}</p></div>`;
             }
-
-            // Maps Link Button logic included in detail modal if wanted, or relying on separate Maps button in list card.
-            // Leaving standard Close button.
 
             document.getElementById('mosqueDetailModal').classList.remove('hidden');
         }
@@ -325,7 +338,7 @@
         }
 
         function getTimeRemaining(timeStr) {
-            if(!timeStr) return '';
+            if(!timeStr || !timeStr.includes(':')) return '';
             const now = new Date(); const [h, m] = timeStr.split(':');
             const target = new Date(); target.setHours(h, m, 0, 0);
             if(target < now) target.setDate(target.getDate() + 1);
@@ -338,11 +351,27 @@
 
         function formatDateShort(iso) {
             if (!iso) return '';
-            const d = new Date(iso);
-            return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+            try {
+                const d = new Date(iso);
+                if(isNaN(d.getTime())) return '';
+                return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+            } catch (e) { return ''; }
         }
 
-        function renderApp() { renderHeader(); renderListBar(); const c = document.getElementById('mainContainer'); if(!c) return; if (viewMode === 'next') renderNextPrayerMode(c); else renderListMode(c); updateNavState(); }
+        function renderApp() { 
+            try {
+                renderHeader(); renderListBar(); 
+                const c = document.getElementById('mainContainer'); 
+                if(!c) return; 
+                if (viewMode === 'next') renderNextPrayerMode(c); 
+                else renderListMode(c); 
+                updateNavState(); 
+            } catch (e) {
+                console.error("Render error", e);
+                // Fallback to avoid white screen
+                document.getElementById('mainContainer').innerHTML = `<div class="text-center mt-20 text-red-400 text-xs">Error: ${e.message}</div>`;
+            }
+        }
 
         function renderHeader() {
             const isFriday = new Date().getDay() === 5;
@@ -368,15 +397,19 @@
             sequence.forEach((pid, index) => {
                 const pObj = prayersList.find(p=>p.id===pid); const pName = pObj?.name || pid;
                 let list = mosques.filter(m => m.lists.includes(currentList) || currentList === 'All');
-                list = list.filter(m => m.timings && m.timings[pid] && m.timings[pid].time);
+                
+                // Safe filtering
+                list = list.filter(m => m.timings && m.timings[pid] && m.timings[pid].time && m.timings[pid].time.includes(':'));
 
                 if (index === 0) {
                     const now = new Date();
                     const nowMins = now.getHours() * 60 + now.getMinutes();
                     list = list.filter(m => {
-                        const [h, mn] = m.timings[pid].time.split(':');
-                        const mTime = parseInt(h) * 60 + parseInt(mn);
-                        return mTime > nowMins;
+                        try {
+                            const [h, mn] = m.timings[pid].time.split(':');
+                            const mTime = parseInt(h) * 60 + parseInt(mn);
+                            return mTime > nowMins;
+                        } catch(e) { return false; }
                     });
                 }
                 
@@ -393,9 +426,12 @@
 
                 html += `<div class="mt-6 mb-2 flex items-center gap-2 px-1"><i class="fas ${pObj?.icon||'fa-clock'} text-xs ${isFirst ? 'text-brand-500' : 'text-gray-400'}"></i><h3 class="text-xs font-bold uppercase tracking-widest ${isFirst ? 'text-brand-600 dark:text-brand-400' : 'text-gray-400'}">${pName}</h3></div><div class="space-y-1">`;
                 html += list.map(m => {
-                    const t = m.timings[pid]; const [h, mns] = t.time.split(':'); const numTime = `${parseInt(h)%12||12}:${mns}`; const suff = parseInt(h)>=12 ? 'PM' : 'AM';
-                    const remaining = isFirst ? `<div class="text-[9px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 px-2 py-0.5 rounded mt-1 inline-block">${getTimeRemaining(t.time)}</div>` : '';
-                    const dateStr = (!t.fixed && t.lastUpdated) ? `<span class="block text-[8px] text-gray-400 font-normal text-right mt-0.5">${formatDateShort(t.lastUpdated)}</span>` : '';
+                    const tData = m.timings[pid]; 
+                    const [h, mns] = tData.time.split(':'); 
+                    const numTime = `${parseInt(h)%12||12}:${mns}`; 
+                    const suff = parseInt(h)>=12 ? 'PM' : 'AM';
+                    const remaining = isFirst ? `<div class="text-[9px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 px-2 py-0.5 rounded mt-1 inline-block">${getTimeRemaining(tData.time)}</div>` : '';
+                    const dateStr = (!tData.fixed && tData.lastUpdated) ? `<span class="block text-[8px] text-gray-400 font-normal text-right mt-0.5">${formatDateShort(tData.lastUpdated)}</span>` : '';
                     return `<div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] ${isFirst ? 'border-brand-500' : 'border-gray-200 dark:border-gray-600'} cursor-pointer active:scale-[0.98] transition-transform animate-card"><div class="flex-1 min-w-0 mr-4"><h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${m.name}</h4><p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">${m.area}</p></div><div class="text-right flex flex-col items-end"><div class="whitespace-nowrap"><span class="font-mono text-lg font-bold text-gray-800 dark:text-white tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>${remaining}${dateStr}</div></div>`;
                 }).join(''); html += `</div>`;
             });
@@ -429,12 +465,13 @@
                     
                     <div class="grid grid-cols-5 gap-0.5 text-center border-t border-gray-50 dark:border-gray-700 pt-3 pb-3 px-4">
                         ${['fajr','zuhr','asr','isha','jumma'].map(p => {
-                            const t = m.timings && m.timings[p] && m.timings[p].time ? m.timings[p].time : null;
+                            const tData = m.timings ? m.timings[p] : null;
+                            const t = tData && tData.time ? tData.time : null;
                             const pObj = prayersList.find(x => x.id === p);
                             const label = pObj.name.substring(0,4).toUpperCase();
                             if(!t) return `<div class="flex flex-col items-center justify-center opacity-40"><div class="text-[8px] font-bold text-gray-400 mb-1 flex flex-col items-center gap-0.5"><i class="fas ${pObj.icon} text-[10px]"></i> ${label}</div><div class="text-xs font-bold text-gray-300">-</div></div>`;
                             const [h, mn] = t.split(':'); const suf = parseInt(h)>=12 ? 'PM':'AM'; const dis = `${parseInt(h)%12||12}:${mn}`;
-                            const dateStr = (!m.timings[p].fixed && m.timings[p].lastUpdated) ? `<span class="text-[7px] text-gray-400 block -mt-0.5">${formatDateShort(m.timings[p].lastUpdated)}</span>` : '';
+                            const dateStr = (tData && !tData.fixed && tData.lastUpdated) ? `<span class="text-[7px] text-gray-400 block -mt-0.5">${formatDateShort(tData.lastUpdated)}</span>` : '';
                             return `<div onclick="openEditTiming('${m.id}')" class="flex flex-col items-center group/time hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded py-1 transition-colors cursor-pointer"><div class="text-[8px] font-bold text-gray-400 mb-1 flex flex-col items-center gap-0.5 text-brand-500/80"><i class="fas ${pObj.icon} text-[10px] mb-0.5"></i> ${label}</div><div class="flex flex-col items-center leading-none"><span class="font-mono text-sm font-bold dark:text-white tracking-tight">${dis}</span><span class="text-[8px] text-gray-400 font-bold scale-75 origin-top mt-0.5">${suf}</span></div>${dateStr}</div>`;
                         }).join('')}
                     </div>
@@ -456,7 +493,6 @@
 
         function toggleNotes(id) {
             const el = document.getElementById(`notes_${id}`);
-            // Toggle visual state
             if(el.classList.contains('hidden')){
                 el.classList.remove('hidden');
                 document.getElementById(`chevron_notes_${id}`).classList.add('text-brand-500');
