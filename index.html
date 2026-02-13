@@ -45,10 +45,6 @@
         .toggle-checkbox:checked + .toggle-label { background-color: #0d9488; }
         .toggle-label { width: 36px; height: 20px; background-color: #e5e7eb; transition: 0.2s; }
         .toggle-checkbox { right: 16px; transition: 0.2s; width: 16px; height: 16px; top: 2px; }
-        
-        /* List Chip Styles */
-        .list-btn { @apply px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-xs font-bold text-gray-500 dark:text-gray-400 cursor-pointer transition-all select-none; }
-        .list-btn.active { @apply bg-brand-600 text-white border-brand-600 shadow-md; }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans transition-colors duration-200">
@@ -198,7 +194,7 @@
             document.getElementById('theme_toggle').checked = appSettings.theme === 'dark';
             updateSidebarToggles(); updateClock(); setInterval(updateClock, 1000);
             
-            setupShareModal(); // FIXED: Missing call to setup share modal
+            setupShareModal(); 
             
             loadData();
             let lastScroll = 0;
@@ -230,7 +226,7 @@
         function renderListBar() { const listsToShow = ['Favorites', 'All', ...Array.from(allLists).filter(l => l!=='Favorites')]; document.getElementById('listBar').innerHTML = listsToShow.map(list => `<button onclick="switchList('${list}')" class="px-3 py-1.5 rounded-full text-[10px] font-bold transition-all whitespace-nowrap border ${currentList === list ? 'bg-brand-600 text-white border-brand-600 shadow-md' : 'bg-white dark:bg-gray-700 text-gray-500 border-gray-200 dark:border-gray-600'}">${list}</button>`).join(''); }
         function switchList(name) { currentList = name; renderApp(); renderListBar(); }
 
-        // --- NEW OPEN MODAL LOGIC ---
+        // --- NEW OPEN MODAL LOGIC (With Checkbox Chips) ---
         function openMosqueModal(id = null) { 
             document.getElementById('mosqueInfoModal').classList.remove('hidden'); 
             const isEdit = id !== null; 
@@ -242,11 +238,25 @@
             if(isEdit) delBtn.classList.remove('hidden');
             else delBtn.classList.add('hidden');
 
-            // 1. Generate List Chips
+            // Generate List Chips (Checkbox based)
             const container = document.getElementById('listChipsContainer');
-            container.innerHTML = Array.from(allLists).map(l => 
-                `<div onclick="this.classList.toggle('active')" class="list-btn ${l==='Favorites' && !isEdit ? 'active':''}">${l}</div>`
-            ).join('');
+            
+            let currentLists = ['Favorites'];
+            if (isEdit) {
+                const m = mosques.find(x => x.id === id);
+                if (m && m.lists) currentLists = m.lists;
+            }
+
+            container.innerHTML = Array.from(allLists).map(l => {
+                const isChecked = currentLists.includes(l);
+                return `
+                <label class="cursor-pointer select-none">
+                    <input type="checkbox" value="${l}" class="peer sr-only" ${isChecked ? 'checked' : ''}>
+                    <div class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-xs font-bold text-gray-500 dark:text-gray-400 transition-all peer-checked:bg-brand-600 peer-checked:text-white peer-checked:border-brand-600 peer-checked:shadow-md">
+                        ${l}
+                    </div>
+                </label>`;
+            }).join('');
             
             document.getElementById('m_new_list').value = '';
 
@@ -257,25 +267,20 @@
                     document.getElementById('m_area').value = m.area; 
                     document.getElementById('m_link').value = m.locationLink || ''; 
                     document.getElementById('m_notes').value = m.address || ''; 
-                    // Set active lists
-                    const chips = container.querySelectorAll('.list-btn');
-                    chips.forEach(chip => {
-                        if(m.lists.includes(chip.innerText)) chip.classList.add('active');
-                        else chip.classList.remove('active');
-                    });
                 }
             } else {
                 const nameInput = document.getElementById('m_name');
                 nameInput.value = 'Masjid-e-';
-                nameInput.focus();
-                nameInput.setSelectionRange(nameInput.value.length, nameInput.value.length);
+                setTimeout(() => {
+                    nameInput.focus();
+                    nameInput.setSelectionRange(nameInput.value.length, nameInput.value.length);
+                }, 50);
                 document.getElementById('m_area').value = '';
                 document.getElementById('m_link').value = '';
                 document.getElementById('m_notes').value = '';
             }
         }
 
-        // FIXED: Missing function openMosqueDetail added
         function openMosqueDetail(id) {
             const m = mosques.find(x => x.id === id);
             if (!m) return;
@@ -314,30 +319,49 @@
             const id = document.getElementById('editMosqueId').value; 
             const name = document.getElementById('m_name').value; 
             
-            // Gather Lists from Chips
-            const chips = document.querySelectorAll('#listChipsContainer .list-btn.active');
-            let selected = Array.from(chips).map(c => c.innerText);
+            // Get all checked boxes
+            const checkedBoxes = document.querySelectorAll('#listChipsContainer input[type="checkbox"]:checked');
+            let selected = Array.from(checkedBoxes).map(cb => cb.value);
             
+            // Handle new list tag input
             const newTag = document.getElementById('m_new_list').value.trim();
-            if(newTag) selected.push(newTag);
+            if(newTag) {
+                selected.push(newTag);
+                allLists.add(newTag); 
+            }
+
             if(selected.length === 0) selected.push('Favorites');
 
             if (!name) return alert("Enter Name"); 
-            const data = { name, area: document.getElementById('m_area').value||'', lists: selected, locationLink: document.getElementById('m_link').value, address: document.getElementById('m_notes').value }; 
+            
+            const data = { 
+                name, 
+                area: document.getElementById('m_area').value || '', 
+                lists: selected, 
+                locationLink: document.getElementById('m_link').value, 
+                address: document.getElementById('m_notes').value 
+            }; 
+            
             closeModal('mosqueInfoModal'); 
             
             try { 
                 if(id) {
                     await db.collection('mosques').doc(id).update(data);
                 } else { 
-                    data.order=Date.now(); 
-                    data.timings={fajr:{time:'05:30',fixed:false},zuhr:{time:'13:15',fixed:true},asr:{time:'16:45',fixed:false},isha:{time:'20:15',fixed:true},jumma:{time:'13:30',fixed:true}}; 
+                    data.order = Date.now(); 
+                    data.timings = {
+                        fajr: {time:'05:30', fixed:false},
+                        zuhr: {time:'13:15', fixed:true},
+                        asr: {time:'16:45', fixed:false},
+                        isha: {time:'20:15', fixed:true},
+                        jumma: {time:'13:30', fixed:true}
+                    }; 
                     const docRef = await db.collection('mosques').add(data);
-                    // OPEN TIMINGS IMMEDIATELY
                     setTimeout(() => openEditTiming(docRef.id), 500); 
                 } 
                 showToast(); 
-            } catch(e){console.error(e);} 
+                renderListBar();
+            } catch(e) { console.error(e); } 
         }
 
         // --- CLOCK ---
@@ -391,10 +415,8 @@
                 const isFirst = index === 0; const pObj = prayersList.find(p=>p.id===pid); const pName = pObj?.name || pid;
                 let list = mosques.filter(m => m.lists.includes(currentList) || currentList === 'All');
                 
-                // FIXED: Safety check to prevent crashing on undefined timings
                 list = list.filter(m => m.timings && m.timings[pid] && m.timings[pid].time);
                 
-                // FIXED: Safety check inside sort
                 list.sort((a, b) => {
                     const tA = a.timings[pid]?.time || '00:00';
                     const tB = b.timings[pid]?.time || '00:00';
