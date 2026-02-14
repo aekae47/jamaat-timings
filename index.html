@@ -7,7 +7,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@700&family=Google+Sans+Code:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@700&family=Source+Code+Pro:wght@600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -25,7 +25,7 @@
                     fontFamily: {
                         sans: ['Montserrat', 'sans-serif'],
                         serif: ['Playfair Display', 'serif'],
-                        mono: ['Google Sans Code', 'monospace'],
+                        mono: ['Source Code Pro', 'monospace'],
                     },
                     colors: {
                         brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' }
@@ -142,9 +142,12 @@
     <div id="mosqueDetailModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm max-h-[85vh] shadow-2xl flex flex-col animate-card overflow-hidden">
             <div class="p-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/20 flex justify-between items-start">
-                <div>
-                    <h2 class="text-xl font-serif font-bold text-gray-800 dark:text-white leading-tight" id="detail_name">Name</h2>
-                    <p class="text-xs font-bold text-gray-500 dark:text-gray-400 mt-1" id="detail_area">Area</p>
+                <div class="flex gap-3 items-start">
+                    <i class="fas fa-mosque text-brand-600 dark:text-brand-400 mt-1.5 text-lg"></i>
+                    <div>
+                        <h2 class="text-xl font-serif font-bold text-gray-800 dark:text-white leading-tight" id="detail_name">Name</h2>
+                        <p class="text-xs font-bold text-gray-500 dark:text-gray-400 mt-1" id="detail_area">Area</p>
+                    </div>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="openMosqueModal(currentDetailId)" class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center hover:bg-brand-100"><i class="fas fa-pencil-alt text-xs"></i></button>
@@ -305,7 +308,8 @@
                         if(!m.lists) m.lists=['Favorites'];
                         m.lists.forEach(l => allLists.add(l));
                     });
-                    mosques.sort((a, b) => (a.order || 0) - (b.order || 0));
+                    // Sort by order descending so newest (largest timestamp) is at top
+                    mosques.sort((a, b) => (b.order || 0) - (a.order || 0));
                     renderApp();
                 }
             });
@@ -374,8 +378,10 @@
             try { 
                 if(id) { await db.collection('mosques').doc(id).update(data); } 
                 else { 
+                    // Set order to now
                     data.order=Date.now(); 
-                    data.timings={fajr:{time:'05:30',fixed:false},zuhr:{time:'13:15',fixed:true},asr:{time:'16:45',fixed:false},isha:{time:'20:15',fixed:true},jumma:{time:'13:30',fixed:true}}; 
+                    // Isha not fixed by default
+                    data.timings={fajr:{time:'05:30',fixed:false},zuhr:{time:'13:15',fixed:true},asr:{time:'16:45',fixed:false},isha:{time:'20:15',fixed:false},jumma:{time:'13:30',fixed:true}}; 
                     const docRef = await db.collection('mosques').add(data);
                     setTimeout(() => openEditTiming(docRef.id), 500); 
                 } 
@@ -448,10 +454,7 @@
                     if (isFirst) {
                         const [h, m] = t.split(':').map(Number);
                         const prayerMinutes = h * 60 + m;
-                        // Special handling for Fajr past midnight
-                        if (pid === 'fajr' && nowMinutes > 1200) {
-                            return true; // Don't filter tomorrow's Fajr yet
-                        }
+                        if (pid === 'fajr' && nowMinutes > 1200) { return true; }
                         return prayerMinutes > nowMinutes;
                     }
                     return true;
@@ -465,7 +468,7 @@
                     const t = m.timings[pid]; const [h, mns] = t.time.split(':'); const numTime = `${parseInt(h)%12||12}:${mns}`; const suff = parseInt(h)>=12 ? 'PM' : 'AM';
                     const remaining = isFirst ? `<div class="text-[9px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 px-2 py-0.5 rounded mt-1 inline-block">${getTimeRemaining(t.time)}</div>` : '';
                     const dateStamp = (!t.fixed && t.lastUpdated) ? `<div class="text-[8px] text-gray-300 mt-0.5">${formatUpdateDate(t.lastUpdated)}</div>` : '';
-                    return `<div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] ${isFirst ? 'border-brand-500' : 'border-gray-200 dark:border-gray-600'} cursor-pointer active:scale-[0.98] transition-transform animate-card"><div class="flex-1 min-w-0 mr-4"><h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${m.name}</h4><p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">${m.area}</p></div><div class="text-right flex flex-col items-end"><div class="whitespace-nowrap"><span class="font-mono text-lg font-bold text-gray-800 dark:text-white tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>${remaining}${dateStamp}</div></div>`;
+                    return `<div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] ${isFirst ? 'border-brand-500' : 'border-gray-200 dark:border-gray-600'} cursor-pointer active:scale-[0.98] transition-transform animate-card"><div class="flex-1 min-w-0 mr-4 flex items-center gap-2.5"><i class="fas fa-mosque text-[10px] text-brand-600 dark:text-brand-400"></i><div class="truncate"><h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${m.name}</h4><p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">${m.area}</p></div></div><div class="text-right flex flex-col items-end"><div class="whitespace-nowrap"><span class="font-mono text-lg font-bold text-gray-800 dark:text-white tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>${remaining}${dateStamp}</div></div>`;
                 }).join(''); html += `</div>`;
             });
             container.innerHTML = html;
@@ -486,9 +489,12 @@
             return `
                 <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border-l-[3px] border-r-[3px] border-l-brand-500 border-r-gray-100 dark:border-r-gray-700 mb-3 relative group animate-card">
                      <div class="flex justify-between items-start mb-3 pl-1">
-                        <div class="cursor-pointer" onclick="openMosqueDetail('${m.id}')">
-                            <h2 class="text-sm font-bold dark:text-white leading-tight">${m.name}</h2>
-                            <p class="text-[10px] text-gray-400 mt-0.5"><i class="fas fa-map-marker-alt text-[8px] mr-1"></i>${m.area}</p>
+                        <div class="cursor-pointer flex items-start gap-2.5" onclick="openMosqueDetail('${m.id}')">
+                            <i class="fas fa-mosque text-brand-600 dark:text-brand-400 mt-1 text-xs"></i>
+                            <div>
+                                <h2 class="text-sm font-bold dark:text-white leading-tight">${m.name}</h2>
+                                <p class="text-[10px] text-gray-400 mt-0.5"><i class="fas fa-map-marker-alt text-[8px] mr-1"></i>${m.area}</p>
+                            </div>
                         </div>
                         <div class="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-1">
                             <button onclick="moveMosque('${m.id}', -1)" class="w-6 h-6 hover:bg-white dark:hover:bg-gray-600 rounded flex items-center justify-center text-xs text-gray-500"><i class="fas fa-chevron-up"></i></button>
@@ -527,11 +533,11 @@
         function handleSearch() { searchQuery = document.getElementById('searchInput').value.toLowerCase(); renderApp(); }
         function toggleMode(key) { appSettings[key] = !appSettings[key]; localStorage.setItem('appSettings', JSON.stringify(appSettings)); renderApp(); }
         function updateSidebarToggles() { document.getElementById('mode_ramadan').checked = appSettings.ramadan; document.getElementById('mode_eidFitr').checked = appSettings.eidFitr; document.getElementById('mode_eidAdha').checked = appSettings.eidAdha; document.getElementById('mode_lateIsha').checked = appSettings.lateIsha; }
-        async function moveMosque(id, dir) { const idx = mosques.findIndex(m => m.id === id); if (idx === -1) return; const targetIdx = idx + dir; if (targetIdx < 0 || targetIdx >= mosques.length) return; const m1 = mosques[idx], m2 = mosques[targetIdx]; let o1 = m1.order||0, o2 = m2.order||0; if(o1===o2) { o1=Date.now(); o2=o1+100; } m1.order=o2; m2.order=o1; mosques.sort((a,b)=>a.order-b.order); renderApp(); const b = db.batch(); b.update(db.collection('mosques').doc(m1.id),{order:m1.order}); b.update(db.collection('mosques').doc(m2.id),{order:m2.order}); await b.commit(); }
+        async function moveMosque(id, dir) { const idx = mosques.findIndex(m => m.id === id); if (idx === -1) return; const targetIdx = idx + dir; if (targetIdx < 0 || targetIdx >= mosques.length) return; const m1 = mosques[idx], m2 = mosques[targetIdx]; let o1 = m1.order||0, o2 = m2.order||0; if(o1===o2) { o1=Date.now(); o2=o1+100; } m1.order=o2; m2.order=o1; // Re-sort handled by listener but we sort locally for immediate feedback mosques.sort((a,b)=>b.order-a.order); renderApp(); const b = db.batch(); b.update(db.collection('mosques').doc(m1.id),{order:m1.order}); b.update(db.collection('mosques').doc(m2.id),{order:m2.order}); await b.commit(); }
         async function deleteMosque() { const id = document.getElementById('editMosqueId').value; if(confirm("Delete this mosque?")) { closeModal('mosqueInfoModal'); await db.collection('mosques').doc(id).delete(); showToast(); } }
         async function saveTimings() { const m = mosques.find(x => x.id === editingTimingsId); if (!m) return; let updated = {...m.timings}; const nowStr = new Date().toISOString(); prayersList.forEach(p => { const el = document.getElementById(`input_${p.id}`); const fix = document.getElementById(`fix_${p.id}`); if(el) updated[p.id] = { time: el.value, fixed: fix.checked, lastUpdated: nowStr }; }); specialPrayersList.forEach(sp => { const el = document.getElementById(`input_${sp.id}`); if(el) updated[sp.id] = { time: el.value }; }); closeModal('editTimingModal'); m.timings = updated; renderApp(); await db.collection('mosques').doc(editingTimingsId).update({timings: updated}); showToast(); }
         function openEditTiming(id) { editingTimingsId = id; const m = mosques.find(x => x.id === id); document.getElementById('timingModalMosqueName').innerText = m.name; document.getElementById('timingEditorContainer').innerHTML = prayersList.map(p => createTimeRow(p.id, p.name, m.timings[p.id])).join(''); document.getElementById('specialPrayersContainer').innerHTML = specialPrayersList.map(sp => createTimeRow(sp.id, sp.name, m.timings[sp.id] || {time:''}, true, sp.type || 'time')).join(''); document.getElementById('specialPrayersContainer').classList.add('hidden'); document.getElementById('specialChevron').classList.remove('rotate-180'); document.getElementById('editTimingModal').classList.remove('hidden'); }
-        function createTimeRow(key, name, data, isSpecial = false, type = 'time') { const timeVal = data?.time || ''; const isFixed = data?.fixed || false; if (type === 'parahs') return `<div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 pb-3 mb-3 last:border-0"><div class="flex items-center gap-3 mb-2"><span class="font-bold text-xs w-16 text-gray-500 uppercase tracking-wide">${name}</span><input type="number" step="0.25" id="input_${key}" value="${timeVal}" placeholder="1.25" class="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-center font-mono text-base font-bold text-gray-800 dark:text-white outline-none focus:border-brand-500"><button onclick="clearTimeInput('${key}')" class="text-gray-400 hover:text-red-500 w-8 h-8"><i class="fas fa-trash text-xs"></i></button></div></div>`; return `<div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 pb-3 mb-3 last:border-0 last:mb-0"><div class="flex items-center gap-3 mb-2"><span class="font-bold text-sm text-gray-700 dark:text-gray-300 w-20">${name}</span><div class="flex-1 relative h-10"><div id="display_${key}" class="absolute inset-0 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl flex items-center justify-center font-mono text-base font-bold text-gray-800 dark:text-white pointer-events-none transition-colors">${formatTime12(timeVal)}</div><input type="time" id="input_${key}" value="${timeVal}" onchange="updateDisplayLayer('${key}')" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"></div><button onclick="clearTimeInput('${key}')" class="text-gray-400 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"><i class="fas fa-trash text-xs"></i></button></div><div class="flex justify-between items-center pl-[5.5rem] pr-12">${!isSpecial ? `<label class="flex items-center gap-2 cursor-pointer group"><input type="checkbox" id="fix_${key}" ${isFixed ? 'checked' : ''} class="w-4 h-4 accent-brand-600 rounded cursor-pointer"><span class="text-[10px] uppercase font-bold text-gray-400 group-hover:text-brand-600 transition-colors">Fixed</span></label>` : '<div></div>'}<div class="flex gap-2"><button onclick="adjustTime('${key}', -5)" class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-brand-100 dark:hover:bg-brand-900 rounded-md text-[10px] font-bold text-gray-600 dark:text-gray-300 transition-colors">- 5</button><button onclick="adjustTime('${key}', 5)" class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-brand-100 dark:hover:bg-brand-900 rounded-md text-[10px] font-bold text-gray-600 dark:text-gray-300 transition-colors">+ 5</button></div></div></div>`; }
+        function createTimeRow(key, name, data, isSpecial = false, type = 'time') { const timeVal = data?.time || ''; const isFixed = data?.fixed || false; if (type === 'parahs') return `<div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 pb-3 mb-3 last:border-0"><div class="flex items-center gap-3 mb-2"><span class="font-bold text-xs w-16 text-gray-500 uppercase tracking-wide">${name}</span><input type="number" step="0.25" id="input_${key}" value="${timeVal}" placeholder="1.25" class="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-center font-mono text-base font-bold text-gray-800 dark:text-white outline-none focus:border-brand-500"><button onclick="clearTimeInput('${key}')" class="text-gray-400 hover:text-red-500 w-8 h-8"><i class="fas fa-trash text-xs"></i></button></div></div>`; return `<div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 pb-3 mb-3 last:border-0 last:mb-0"><div class="flex items-center gap-3 mb-2"><span class="font-bold text-sm text-gray-700 dark:text-gray-300 w-20">${name}</span><div class="flex-1 relative h-10"><div id="display_${key}" class="absolute inset-0 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl flex items-center justify-center font-mono text-base font-bold text-gray-800 dark:text-white pointer-events-none transition-colors">${formatTime12(timeVal)}</div><input type="time" id="input_${key}" value="${timeVal}" onchange="updateDisplayLayer('${key}')" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"></div><button onclick="clearTimeInput('${key}')" class="text-gray-400 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"><i class="fas fa-trash text-xs"></i></button></div><div class="flex justify-between items-center pl-[5.5rem] pr-12">${!isSpecial ? `<label class="flex items-center gap-2 cursor-pointer group"><input type="checkbox" id="fix_${key}" ${isFixed ? 'checked' : ''} class="w-4 h-4 accent-brand-600 rounded cursor-pointer"><span class="text-[10px] uppercase font-bold text-gray-400 group-hover:text-brand-600 transition-colors">Same all year</span></label>` : '<div></div>'}<div class="flex gap-2"><button onclick="adjustTime('${key}', -5)" class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-brand-100 dark:hover:bg-brand-900 rounded-md text-[10px] font-bold text-gray-600 dark:text-gray-300 transition-colors">- 5</button><button onclick="adjustTime('${key}', 5)" class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-brand-100 dark:hover:bg-brand-900 rounded-md text-[10px] font-bold text-gray-600 dark:text-gray-300 transition-colors">+ 5</button></div></div></div>`; }
         function updateDisplayLayer(key) { const input = document.getElementById(`input_${key}`); const display = document.getElementById(`display_${key}`); if (input && display) display.innerHTML = input.value ? formatTime12(input.value) : '--:--'; }
         function clearTimeInput(key) { document.getElementById(`input_${key}`).value = ''; updateDisplayLayer(key); }
         function adjustTime(key, mins) { const input = document.getElementById(`input_${key}`); if (!input.value) return; const [h, m] = input.value.split(':').map(Number); const date = new Date(); date.setHours(h); date.setMinutes(m + mins); const newH = String(date.getHours()).padStart(2, '0'); const newM = String(date.getMinutes()).padStart(2, '0'); input.value = `${newH}:${newM}`; updateDisplayLayer(key); }
