@@ -7,7 +7,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@700&family=Google+Sans+Code:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@700&family=Source+Code+Pro:wght@600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -25,7 +25,7 @@
                     fontFamily: {
                         sans: ['Montserrat', 'sans-serif'],
                         serif: ['Playfair Display', 'serif'],
-                        mono: ['Google Sans Code', 'monospace'],
+                        mono: ['Source Code Pro', 'monospace'],
                     },
                     colors: {
                         brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' }
@@ -75,6 +75,7 @@
                     <div class="flex justify-between items-center"><span>Ramadan</span><input type="checkbox" id="mode_ramadan" onchange="toggleMode('ramadan')" class="accent-brand-600 w-4 h-4"></div>
                     <div class="flex justify-between items-center"><span>Eid-ul-Fitr</span><input type="checkbox" id="mode_eidFitr" onchange="toggleMode('eidFitr')" class="accent-brand-600 w-4 h-4"></div>
                     <div class="flex justify-between items-center"><span>Eid-ul-Adha</span><input type="checkbox" id="mode_eidAdha" onchange="toggleMode('eidAdha')" class="accent-brand-600 w-4 h-4"></div>
+                    <div class="flex justify-between items-center"><span>Qiyam-ul-Layl</span><input type="checkbox" id="mode_qiyam" onchange="toggleMode('qiyam')" class="accent-brand-600 w-4 h-4"></div>
                     <div class="flex justify-between items-center"><span>Late Isha</span><input type="checkbox" id="mode_lateIsha" onchange="toggleMode('lateIsha')" class="accent-brand-600 w-4 h-4"></div>
                 </div>
             </div>
@@ -232,11 +233,11 @@
     <script>
         let viewMode = 'next', currentList = 'Favorites', searchQuery = '', mosques = [], allLists = new Set(['Favorites', 'Home', 'Work']);
         let editingTimingsId = null, currentDetailId = null, currentTimeDisplay = '', currentTargetPrayer = 'fajr';
-        let appSettings = JSON.parse(localStorage.getItem('appSettings')) || { ramadan: false, eidFitr: false, eidAdha: false, lateIsha: false, theme: 'light' };
+        let appSettings = { ramadan: false, eidFitr: false, eidAdha: false, qiyam: false, lateIsha: false, theme: 'light' };
         
         const prayersList = [ { id: 'fajr', name: 'Fajr', icon: 'fa-cloud-sun' }, { id: 'zuhr', name: 'Zuhr', icon: 'fa-sun' }, { id: 'asr', name: 'Asr', icon: 'fa-cloud' }, { id: 'isha', name: 'Isha', icon: 'fa-moon' }, { id: 'jumma', name: 'Jumma', icon: 'fa-users' } ];
         const sequenceOrder = ['fajr', 'zuhr', 'asr', 'isha']; 
-        const specialPrayersList = [ { id: 'taraweeh', name: 'Taraweeh', type: 'parahs', mode: 'ramadan' }, { id: 'eidFitr', name: 'Eid-ul-Fitr', mode: 'eidFitr' }, { id: 'eidAdha', name: 'Eid-ul-Adha', mode: 'eidAdha' }, { id: 'lateIsha', name: 'Late Isha', mode: 'lateIsha' } ];
+        const specialPrayersList = [ { id: 'taraweeh', name: 'Taraweeh', type: 'parahs', mode: 'ramadan' }, { id: 'eidFitr', name: 'Eid-ul-Fitr Prayer', mode: 'eidFitr' }, { id: 'eidAdha', name: 'Eid-ul-Adha Prayer', mode: 'eidAdha' }, { id: 'qiyam', name: 'Qiyam-ul-Layl', mode: 'qiyam' }, { id: 'lateIsha', name: 'Late Isha', mode: 'lateIsha' } ];
 
         const firebaseConfig = { apiKey: "AIzaSyAEzXz42Zih7M6yY97_4e8_E1BNsjbJhnI", authDomain: "timings-ak.firebaseapp.com", projectId: "timings-ak", storageBucket: "timings-ak.firebasestorage.app", messagingSenderId: "1082790063422", appId: "1:1082790063422:web:be439e3d932475a9fe906f" };
         firebase.initializeApp(firebaseConfig);
@@ -271,7 +272,7 @@
                         <i class="fas ${icon} text-xs w-4"></i> ${name}
                     </span>
                     <div class="text-right">
-                        <span class="font-mono text-lg font-bold text-gray-800 dark:text-white">${hasTime ? formatTime12(data.time) : '--:--'}</span>
+                        <span class="${hasTime ? 'font-mono text-lg font-bold text-gray-800 dark:text-white' : 'text-[10px] text-gray-400 italic'}">${hasTime ? formatTime12(data.time) : '(Timing not entered)'}</span>
                         ${hasTime ? dateStamp : ''}
                     </div>
                 </div>`; 
@@ -283,9 +284,8 @@
         };
 
         function init() {
-            if(appSettings.theme === 'dark') document.documentElement.classList.add('dark');
-            document.getElementById('theme_toggle').checked = appSettings.theme === 'dark';
-            updateSidebarToggles(); updateClock(); setInterval(updateClock, 1000);
+            loadSettings();
+            updateClock(); setInterval(updateClock, 1000);
             loadData();
             let lastScroll = 0;
             window.addEventListener('scroll', () => {
@@ -294,6 +294,19 @@
                 if (currentScroll > 50 && currentScroll > lastScroll) { filterBar.style.height = '0px'; filterBar.style.opacity = '0'; } 
                 else { filterBar.style.height = 'auto'; filterBar.style.opacity = '1'; }
                 lastScroll = currentScroll;
+            });
+        }
+
+        async function loadSettings() {
+            db.collection('settings').doc('global_modes').onSnapshot(doc => {
+                if(doc.exists) {
+                    appSettings = doc.data();
+                    updateSidebarToggles();
+                    if(appSettings.theme === 'dark') document.documentElement.classList.add('dark');
+                    else document.documentElement.classList.remove('dark');
+                    document.getElementById('theme_toggle').checked = appSettings.theme === 'dark';
+                    renderApp();
+                }
             });
         }
 
@@ -328,18 +341,11 @@
             const isEdit = id !== null; 
             document.getElementById('mosqueModalTitle').innerText = isEdit ? 'Edit Mosque' : 'Add Mosque'; 
             document.getElementById('editMosqueId').value = id || ''; 
-            
             const delBtn = document.getElementById('btnDeleteMosqueHeader'); 
-            if(isEdit) delBtn.style.display = 'flex';
-            else delBtn.style.display = 'none';
-
+            if(isEdit) delBtn.style.display = 'flex'; else delBtn.style.display = 'none';
             const container = document.getElementById('listChipsContainer');
-            container.innerHTML = Array.from(allLists).map(l => 
-                `<button type="button" onclick="window.toggleChip(this)" class="list-btn">${l}</button>`
-            ).join('');
-            
+            container.innerHTML = Array.from(allLists).map(l => `<button type="button" onclick="window.toggleChip(this)" class="list-btn">${l}</button>`).join('');
             document.getElementById('m_new_list').value = '';
-
             if (isEdit) { 
                 const m = mosques.find(x => x.id === id); 
                 if(m) {
@@ -348,18 +354,14 @@
                     document.getElementById('m_link').value = m.locationLink || ''; 
                     document.getElementById('m_notes').value = m.address || ''; 
                     const chips = container.querySelectorAll('.list-btn');
-                    chips.forEach(chip => {
-                        if(m.lists && m.lists.includes(chip.innerText)) chip.classList.add('active');
-                    });
+                    chips.forEach(chip => { if(m.lists && m.lists.includes(chip.innerText)) chip.classList.add('active'); });
                 }
             } else { 
                 document.getElementById('m_name').value = 'Masjid-e-'; 
                 document.getElementById('m_area').value = ''; 
                 document.getElementById('m_link').value = ''; 
                 document.getElementById('m_notes').value = ''; 
-                document.querySelectorAll('.list-btn').forEach(btn => {
-                    if(btn.innerText === 'Favorites') btn.classList.add('active');
-                });
+                document.querySelectorAll('.list-btn').forEach(btn => { if(btn.innerText === 'Favorites') btn.classList.add('active'); });
             } 
         }
 
@@ -378,13 +380,7 @@
                 if(id) { await db.collection('mosques').doc(id).update(data); } 
                 else { 
                     data.order = -Date.now(); 
-                    data.timings = {
-                        fajr: {time:'05:30', fixed:false},
-                        zuhr: {time:'13:15', fixed:true},
-                        asr: {time:'16:45', fixed:false},
-                        isha: {time:'20:15', fixed:false}, 
-                        jumma: {time:'13:30', fixed:true}
-                    }; 
+                    data.timings = { fajr: {time:'05:30', fixed:false}, zuhr: {time:'13:15', fixed:true}, asr: {time:'16:45', fixed:false}, isha: {time:'20:15', fixed:false}, jumma: {time:'13:30', fixed:true} }; 
                     const docRef = await db.collection('mosques').add(data);
                     setTimeout(() => openEditTiming(docRef.id), 500); 
                 } 
@@ -410,7 +406,7 @@
             if(!timeStr) return '';
             const now = new Date(); const [h, m] = timeStr.split(':').map(Number);
             const target = new Date(); target.setHours(h, m, 0, 0);
-            if(target < now) target.setDate(target.getDate() + 1);
+            if (target < now) { return '(Time Passed)'; }
             const diff = target - now;
             const hrs = Math.floor(diff / 3600000);
             const mins = Math.floor((diff % 3600000) / 60000);
@@ -444,40 +440,52 @@
             const nowMinutes = now.getHours() * 60 + now.getMinutes();
             let html = '';
             
+            const activeEid = [];
+            if(appSettings.eidFitr) activeEid.push('eidFitr');
+            if(appSettings.eidAdha) activeEid.push('eidAdha');
+
+            activeEid.forEach(eidKey => {
+                const eidObj = specialPrayersList.find(s => s.id === eidKey);
+                let list = mosques.filter(m => (m.lists.includes(currentList) || currentList === 'All') && m.timings[eidKey]?.time);
+                if(list.length === 0) return;
+                html += `<div class="mt-6 mb-2 flex items-center gap-2 px-1"><i class="fas fa-star text-xs text-amber-500"></i><h3 class="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">${eidObj.name}</h3></div><div class="space-y-1">`;
+                html += list.map(m => {
+                    const t = m.timings[eidKey]; const [h, mns] = t.time.split(':'); const numTime = `${parseInt(h)%12||12}:${mns}`; const suff = parseInt(h)>=12 ? 'PM' : 'AM';
+                    const passed = (parseInt(h)*60 + parseInt(mns)) < nowMinutes;
+                    const remaining = `<div class="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded mt-1 inline-block">${passed ? '(Time Passed)' : getTimeRemaining(t.time)}</div>`;
+                    return `
+                    <div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] border-amber-500 cursor-pointer active:scale-[0.98] transition-all animate-card ${passed ? 'opacity-40' : ''}">
+                        <div class="flex-1 min-w-0 mr-4 flex items-center gap-2">
+                            <i class="fas fa-mosque text-[10px] text-amber-400"></i>
+                            <div class="min-w-0"><h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${m.name}</h4><p class="text-[9px] text-gray-400 truncate mt-0.5">${m.area}</p></div>
+                        </div>
+                        <div class="text-right flex flex-col items-end">
+                            <div class="whitespace-nowrap"><span class="font-mono text-lg font-bold text-gray-800 dark:text-white tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>
+                            ${remaining}
+                        </div>
+                    </div>`;
+                }).join(''); html += `</div>`;
+            });
+
             sequence.forEach((pid, index) => {
                 const isFirst = index === 0; 
                 const pObj = prayersList.find(p=>p.id===pid); 
                 const pName = pObj?.name || pid;
-                let list = mosques.filter(m => m.lists.includes(currentList) || currentList === 'All');
-                
-                list = list.filter(m => {
-                    const t = m.timings && m.timings[pid]?.time;
-                    if(!t) return false;
-                    if (isFirst) {
-                        const [h, m] = t.split(':').map(Number);
-                        const prayerMinutes = h * 60 + m;
-                        if (pid === 'fajr' && nowMinutes > 1200) { return true; }
-                        return prayerMinutes > nowMinutes;
-                    }
-                    return true;
-                });
-
+                let list = mosques.filter(m => (m.lists.includes(currentList) || currentList === 'All') && m.timings && m.timings[pid]?.time);
                 list.sort((a, b) => a.timings[pid].time.localeCompare(b.timings[pid].time));
                 if (list.length === 0) return;
 
                 html += `<div class="mt-6 mb-2 flex items-center gap-2 px-1"><i class="fas ${pObj?.icon||'fa-clock'} text-xs ${isFirst ? 'text-brand-500' : 'text-gray-400'}"></i><h3 class="text-xs font-bold uppercase tracking-widest ${isFirst ? 'text-brand-600 dark:text-brand-400' : 'text-gray-400'}">${pName}</h3></div><div class="space-y-1">`;
                 html += list.map(m => {
-                    const t = m.timings[pid]; const [h, mns] = t.time.split(':'); const numTime = `${parseInt(h)%12||12}:${mns}`; const suff = parseInt(h)>=12 ? 'PM' : 'AM';
-                    const remaining = isFirst ? `<div class="text-[9px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 px-2 py-0.5 rounded mt-1 inline-block">${getTimeRemaining(t.time)}</div>` : '';
+                    const t = m.timings[pid]; const [h, mns] = t.time.split(':').map(Number); const numTime = `${h%12||12}:${String(mns).padStart(2,'0')}`; const suff = h>=12 ? 'PM' : 'AM';
+                    const passed = isFirst && (h*60 + mns) < nowMinutes && !(pid === 'fajr' && nowMinutes > 1200);
+                    const remaining = isFirst ? `<div class="text-[9px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 px-2 py-0.5 rounded mt-1 inline-block">${passed ? '(Time Passed)' : getTimeRemaining(t.time)}</div>` : '';
                     const dateStamp = (!t.fixed && t.lastUpdated) ? `<div class="text-[8px] text-gray-300 mt-0.5">${formatUpdateDate(t.lastUpdated)}</div>` : '';
                     return `
-                    <div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] ${isFirst ? 'border-brand-500' : 'border-gray-200 dark:border-gray-600'} cursor-pointer active:scale-[0.98] transition-transform animate-card">
+                    <div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] ${isFirst ? 'border-brand-500' : 'border-gray-200 dark:border-gray-600'} cursor-pointer active:scale-[0.98] transition-all animate-card ${passed ? 'opacity-40' : ''}">
                         <div class="flex-1 min-w-0 mr-4 flex items-center gap-2">
                             <i class="fas fa-mosque text-[10px] text-gray-400"></i>
-                            <div class="min-w-0">
-                                <h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${m.name}</h4>
-                                <p class="text-[9px] text-gray-400 dark:text-gray-500 truncate mt-0.5">${m.area}</p>
-                            </div>
+                            <div class="min-w-0"><h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${m.name}</h4><p class="text-[9px] text-gray-400 dark:text-gray-500 truncate mt-0.5">${m.area}</p></div>
                         </div>
                         <div class="text-right flex flex-col items-end">
                             <div class="whitespace-nowrap"><span class="font-mono text-lg font-bold text-gray-800 dark:text-white tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>
@@ -501,21 +509,25 @@
 
         function createAdminCard(m) {
             const hasLink = m.locationLink && m.locationLink.trim() !== '';
+            let specialHTML = '';
+            specialPrayersList.forEach(sp => {
+                if(appSettings[sp.mode] && m.timings[sp.id]?.time) {
+                    specialHTML += `<div class="flex justify-between px-2 py-1 bg-amber-50 dark:bg-amber-900/10 rounded border border-amber-100 dark:border-amber-900/30 mb-1"><span class="text-[9px] font-bold text-amber-700">${sp.name}</span><span class="text-[9px] font-mono font-bold text-amber-800 dark:text-amber-200">${formatTime12(m.timings[sp.id].time)}</span></div>`;
+                }
+            });
+            
             return `
-                <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border-l-[3px] border-r-[3px] border-l-brand-500 border-r-gray-100 dark:border-r-gray-700 mb-3 relative group animate-card">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border-l-[3px] border-r-[3px] border-l-brand-500 border-r-gray-100 dark:border-r-gray-700 mb-3 relative animate-card">
                      <div class="flex justify-between items-start mb-3 pl-1">
                         <div class="cursor-pointer flex items-start gap-3" onclick="openMosqueDetail('${m.id}')">
                             <i class="fas fa-mosque text-brand-500 mt-1"></i>
-                            <div>
-                                <h2 class="text-sm font-bold dark:text-white leading-tight">${m.name}</h2>
-                                <p class="text-[10px] text-gray-400 mt-0.5"><i class="fas fa-map-marker-alt text-[8px] mr-1"></i>${m.area}</p>
-                            </div>
+                            <div><h2 class="text-sm font-bold dark:text-white leading-tight">${m.name}</h2><p class="text-[10px] text-gray-400 mt-0.5">${m.area}</p></div>
                         </div>
                         <div class="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-1">
-                            <button onclick="moveMosque('${m.id}', -1)" class="w-6 h-6 hover:bg-white dark:hover:bg-gray-600 rounded flex items-center justify-center text-xs text-gray-500"><i class="fas fa-chevron-up"></i></button>
-                            <button onclick="moveMosque('${m.id}', 1)" class="w-6 h-6 hover:bg-white dark:hover:bg-gray-600 rounded flex items-center justify-center text-xs text-gray-500"><i class="fas fa-chevron-down"></i></button>
+                            <button onclick="moveMosque('${m.id}', -1)" class="w-6 h-6 rounded flex items-center justify-center text-xs text-gray-500"><i class="fas fa-chevron-up"></i></button>
+                            <button onclick="moveMosque('${m.id}', 1)" class="w-6 h-6 rounded flex items-center justify-center text-xs text-gray-500"><i class="fas fa-chevron-down"></i></button>
                             <div class="w-px h-3 bg-gray-200 dark:bg-gray-600 mx-1"></div>
-                            <button onclick="openMosqueModal('${m.id}')" class="w-6 h-6 text-brand-600 hover:bg-white dark:hover:bg-gray-600 rounded flex items-center justify-center"><i class="fas fa-pencil-alt text-xs"></i></button>
+                            <button onclick="openMosqueModal('${m.id}')" class="w-6 h-6 text-brand-600 rounded flex items-center justify-center"><i class="fas fa-pencil-alt text-xs"></i></button>
                         </div>
                     </div>
                     <div class="grid grid-cols-5 gap-0.5 text-center border-t border-gray-50 dark:border-gray-700 pt-3 mb-3">
@@ -523,16 +535,16 @@
                             const t = m.timings && m.timings[p] && m.timings[p].time ? m.timings[p].time : null;
                             const pObj = prayersList.find(x => x.id === p);
                             const label = pObj.name.substring(0,4).toUpperCase();
-                            if(!t) return `<div onclick="openEditTiming('${m.id}')" class="flex flex-col items-center justify-center opacity-40 cursor-pointer"><div class="text-[8px] font-bold text-gray-400 mb-1 flex flex-col items-center gap-0.5"><i class="fas ${pObj.icon} text-[10px]"></i> ${label}</div><div class="text-xs font-bold text-gray-300">-</div></div>`;
+                            if(!t) return `<div onclick="openEditTiming('${m.id}')" class="flex flex-col items-center opacity-40"><div class="text-[8px] font-bold text-gray-400 mb-1 flex flex-col items-center gap-0.5"><i class="fas ${pObj.icon} text-[10px]"></i> ${label}</div><div class="text-xs font-bold text-gray-300">-</div></div>`;
                             const [h, mn] = t.split(':'); const suf = parseInt(h)>=12 ? 'PM':'AM'; const dis = `${parseInt(h)%12||12}:${mn}`;
-                            const dateStamp = (!m.timings[p].fixed && m.timings[p].lastUpdated) ? `<span class="text-[7px] text-gray-300 block mt-0.5 font-sans">${formatUpdateDate(m.timings[p].lastUpdated)}</span>` : '';
-                            return `<div onclick="openEditTiming('${m.id}')" class="flex flex-col items-center group/time hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded py-1 transition-colors cursor-pointer"><div class="text-[8px] font-bold text-gray-400 mb-1 flex flex-col items-center gap-0.5 text-brand-500/80"><i class="fas ${pObj.icon} text-[10px] mb-0.5"></i> ${label}</div><div class="flex flex-col items-center leading-none"><span class="font-mono text-sm font-bold dark:text-white tracking-tight">${dis}</span><span class="text-[8px] text-gray-400 font-bold scale-75 origin-top mt-0.5">${suf}</span>${dateStamp}</div></div>`;
+                            return `<div onclick="openEditTiming('${m.id}')" class="flex flex-col items-center group/time py-1 cursor-pointer"><div class="text-[8px] font-bold text-brand-500/80 mb-1 flex flex-col items-center gap-0.5"><i class="fas ${pObj.icon} text-[10px] mb-0.5"></i> ${label}</div><span class="font-mono text-sm font-bold dark:text-white">${dis}</span><span class="text-[8px] text-gray-400 font-bold scale-75">${suf}</span></div>`;
                         }).join('')}
                     </div>
+                    <div class="mb-3">${specialHTML}</div>
                     <div class="flex border-t border-gray-100 dark:border-gray-700 pt-0">
-                        <button onclick="toggleCardNotes('${m.id}')" class="flex-1 py-2 text-[10px] font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-bl-xl transition-colors">NOTES <i class="fas fa-chevron-down ml-1"></i></button>
+                        <button onclick="toggleCardNotes('${m.id}')" class="flex-1 py-2 text-[10px] font-bold text-gray-500 rounded-bl-xl transition-colors">NOTES <i class="fas fa-chevron-down ml-1"></i></button>
                         <div class="w-px bg-gray-100 dark:bg-gray-700"></div>
-                        <a href="${hasLink ? m.locationLink : '#'}" target="${hasLink ? '_blank' : ''}" class="flex-1 py-2 text-[10px] font-bold flex items-center justify-center gap-1 ${hasLink ? 'text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20' : 'text-gray-300 cursor-default'} rounded-br-xl transition-colors">MAPS <i class="fas fa-location-arrow"></i></a>
+                        <a href="${hasLink ? m.locationLink : '#'}" target="${hasLink ? '_blank' : ''}" class="flex-1 py-2 text-[10px] font-bold flex items-center justify-center gap-1 ${hasLink ? 'text-brand-600' : 'text-gray-300 cursor-default'} rounded-br-xl transition-colors">MAPS <i class="fas fa-location-arrow"></i></a>
                     </div>
                     <div id="notes_${m.id}" class="hidden bg-gray-50 dark:bg-gray-700/30 p-3 text-[10px] text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-700">${m.address ? m.address : 'No notes available.'}</div>
                 </div>`;
@@ -544,14 +556,14 @@
         function setViewMode(mode) { viewMode = mode; renderApp(); }
         function updateNavState() { document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('text-brand-600'); b.classList.add('text-gray-400'); }); document.getElementById(`nav_${viewMode}`).classList.add('text-brand-600'); document.getElementById(`nav_${viewMode}`).classList.remove('text-gray-400'); }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('sidebarOverlay').classList.toggle('hidden'); }
-        function toggleTheme() { const isDark = document.getElementById('theme_toggle').checked; if(isDark) document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark'); appSettings.theme = isDark ? 'dark':'light'; localStorage.setItem('appSettings', JSON.stringify(appSettings)); }
+        async function toggleTheme() { const isDark = document.getElementById('theme_toggle').checked; appSettings.theme = isDark ? 'dark':'light'; await db.collection('settings').doc('global_modes').update({theme: appSettings.theme}); }
         function handleSearch() { searchQuery = document.getElementById('searchInput').value.toLowerCase(); renderApp(); }
-        function toggleMode(key) { appSettings[key] = !appSettings[key]; localStorage.setItem('appSettings', JSON.stringify(appSettings)); renderApp(); }
-        function updateSidebarToggles() { document.getElementById('mode_ramadan').checked = appSettings.ramadan; document.getElementById('mode_eidFitr').checked = appSettings.eidFitr; document.getElementById('mode_eidAdha').checked = appSettings.eidAdha; document.getElementById('mode_lateIsha').checked = appSettings.lateIsha; }
-        async function moveMosque(id, dir) { const idx = mosques.findIndex(m => m.id === id); if (idx === -1) return; const targetIdx = idx + dir; if (targetIdx < 0 || targetIdx >= mosques.length) return; const m1 = mosques[idx], m2 = mosques[targetIdx]; let o1 = m1.order||0, o2 = m2.order||0; if(o1===o2) { o1=Date.now(); o2=o1+100; } m1.order=o2; m2.order=o1; mosques.sort((a,b)=>a.order-b.order); renderApp(); const b = db.batch(); b.update(db.collection('mosques').doc(m1.id),{order:m1.order}); b.update(db.collection('mosques').doc(m2.id),{order:m2.order}); await b.commit(); }
+        async function toggleMode(key) { appSettings[key] = !appSettings[key]; await db.collection('settings').doc('global_modes').update(appSettings); }
+        function updateSidebarToggles() { document.getElementById('mode_ramadan').checked = appSettings.ramadan; document.getElementById('mode_eidFitr').checked = appSettings.eidFitr; document.getElementById('mode_eidAdha').checked = appSettings.eidAdha; document.getElementById('mode_qiyam').checked = appSettings.qiyam; document.getElementById('mode_lateIsha').checked = appSettings.lateIsha; }
+        async function moveMosque(id, dir) { const idx = mosques.findIndex(m => m.id === id); if (idx === -1) return; const targetIdx = idx + dir; if (targetIdx < 0 || targetIdx >= mosques.length) return; const m1 = mosques[idx], m2 = mosques[targetIdx]; let o1 = m1.order||0, o2 = m2.order||0; m1.order=o2; m2.order=o1; mosques.sort((a,b)=>a.order-b.order); renderApp(); const b = db.batch(); b.update(db.collection('mosques').doc(m1.id),{order:m1.order}); b.update(db.collection('mosques').doc(m2.id),{order:m2.order}); await b.commit(); }
         async function deleteMosque() { const id = document.getElementById('editMosqueId').value; if(confirm("Delete this mosque?")) { closeModal('mosqueInfoModal'); await db.collection('mosques').doc(id).delete(); showToast(); } }
         async function saveTimings() { const m = mosques.find(x => x.id === editingTimingsId); if (!m) return; let updated = {...m.timings}; const nowStr = new Date().toISOString(); prayersList.forEach(p => { const el = document.getElementById(`input_${p.id}`); const fix = document.getElementById(`fix_${p.id}`); if(el) updated[p.id] = { time: el.value, fixed: fix.checked, lastUpdated: nowStr }; }); specialPrayersList.forEach(sp => { const el = document.getElementById(`input_${sp.id}`); if(el) updated[sp.id] = { time: el.value }; }); closeModal('editTimingModal'); m.timings = updated; renderApp(); await db.collection('mosques').doc(editingTimingsId).update({timings: updated}); showToast(); }
-        function openEditTiming(id) { editingTimingsId = id; const m = mosques.find(x => x.id === id); document.getElementById('timingModalMosqueName').innerText = m.name; document.getElementById('timingEditorContainer').innerHTML = prayersList.map(p => createTimeRow(p.id, p.name, m.timings[p.id])).join(''); document.getElementById('specialPrayersContainer').innerHTML = specialPrayersList.map(sp => createTimeRow(sp.id, sp.name, m.timings[sp.id] || {time:''}, true, sp.type || 'time')).join(''); document.getElementById('specialPrayersContainer').classList.add('hidden'); document.getElementById('specialChevron').classList.remove('rotate-180'); document.getElementById('editTimingModal').classList.remove('hidden'); }
+        function openEditTiming(id) { editingTimingsId = id; const m = mosques.find(x => x.id === id); document.getElementById('timingModalMosqueName').innerText = m.name; document.getElementById('timingEditorContainer').innerHTML = prayersList.map(p => createTimeRow(p.id, p.name, m.timings[p.id])).join(''); document.getElementById('specialPrayersContainer').innerHTML = specialPrayersList.map(sp => createTimeRow(sp.id, sp.name, m.timings[sp.id] || {time:''}, true, sp.id === 'taraweeh' ? 'parahs' : 'time')).join(''); document.getElementById('specialPrayersContainer').classList.add('hidden'); document.getElementById('specialChevron').classList.remove('rotate-180'); document.getElementById('editTimingModal').classList.remove('hidden'); }
         function createTimeRow(key, name, data, isSpecial = false, type = 'time') { const timeVal = data?.time || ''; const isFixed = data?.fixed || false; if (type === 'parahs') return `<div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 pb-3 mb-3 last:border-0"><div class="flex items-center gap-3 mb-2"><span class="font-bold text-xs w-16 text-gray-500 uppercase tracking-wide">${name}</span><input type="number" step="0.25" id="input_${key}" value="${timeVal}" placeholder="1.25" class="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-center font-mono text-base font-bold text-gray-800 dark:text-white outline-none focus:border-brand-500"><button onclick="clearTimeInput('${key}')" class="text-gray-400 hover:text-red-500 w-8 h-8"><i class="fas fa-trash text-xs"></i></button></div></div>`; return `<div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 pb-3 mb-3 last:border-0 last:mb-0"><div class="flex items-center gap-3 mb-2"><span class="font-bold text-sm text-gray-700 dark:text-gray-300 w-20">${name}</span><div class="flex-1 relative h-10"><div id="display_${key}" class="absolute inset-0 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl flex items-center justify-center font-mono text-base font-bold text-gray-800 dark:text-white pointer-events-none transition-colors">${formatTime12(timeVal)}</div><input type="time" id="input_${key}" value="${timeVal}" onchange="updateDisplayLayer('${key}')" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"></div><button onclick="clearTimeInput('${key}')" class="text-gray-400 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"><i class="fas fa-trash text-xs"></i></button></div><div class="flex justify-between items-center pl-[5.5rem] pr-12">${!isSpecial ? `<label class="flex items-center gap-2 cursor-pointer group"><input type="checkbox" id="fix_${key}" ${isFixed ? 'checked' : ''} class="w-4 h-4 accent-brand-600 rounded cursor-pointer"><span class="text-[10px] uppercase font-bold text-gray-400 group-hover:text-brand-600 transition-colors">Same all year</span></label>` : '<div></div>'}<div class="flex gap-2"><button onclick="adjustTime('${key}', -5)" class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-brand-100 dark:hover:bg-brand-900 rounded-md text-[10px] font-bold text-gray-600 dark:text-gray-300 transition-colors">- 5</button><button onclick="adjustTime('${key}', 5)" class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-brand-100 dark:hover:bg-brand-900 rounded-md text-[10px] font-bold text-gray-600 dark:text-gray-300 transition-colors">+ 5</button></div></div></div>`; }
         function updateDisplayLayer(key) { const input = document.getElementById(`input_${key}`); const display = document.getElementById(`display_${key}`); if (input && display) display.innerHTML = input.value ? formatTime12(input.value) : '--:--'; }
         function clearTimeInput(key) { document.getElementById(`input_${key}`).value = ''; updateDisplayLayer(key); }
