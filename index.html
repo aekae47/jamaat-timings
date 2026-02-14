@@ -141,7 +141,7 @@
     </div>
 
     <div id="mosqueDetailModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm max-h-[85vh] shadow-2xl flex flex-col animate-card overflow-hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-sm max-h-[85vh] shadow-2xl flex flex-col animate-card overflow-hidden">
             <div class="p-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/20 flex justify-between items-start">
                 <div class="flex items-start gap-3">
                     <i class="fas fa-mosque text-brand-600 dark:text-brand-400 text-xl mt-1"></i>
@@ -405,10 +405,14 @@
             let seq = []; for(let i=0; i<4; i++) { let idx = (startIdx + i) % 4; let pid = sequenceOrder[idx]; const now = new Date(); if (pid === 'zuhr' && (now.getDay() === 5 || (now.getDay()===4 && now.getHours()>=17))) pid = 'jumma'; seq.push(pid); } return seq;
         }
 
-        function getTimeRemaining(timeStr) {
+        function getTimeRemaining(timeStr, pid = null) {
             if(!timeStr) return '';
             const now = new Date(); const [h, m] = timeStr.split(':').map(Number);
             const target = new Date(); target.setHours(h, m, 0, 0);
+            
+            const nowMins = now.getHours() * 60 + now.getMinutes();
+            if (pid === 'fajr' && nowMins > 1200) { target.setDate(target.getDate() + 1); }
+
             if (target < now) { return '(Time Passed)'; }
             const diff = target - now;
             const hrs = Math.floor(diff / 3600000);
@@ -439,8 +443,6 @@
 
         function renderNextPrayerMode(container) {
             const sequence = getSequence(); 
-            const now = new Date();
-            const nowMinutes = now.getHours() * 60 + now.getMinutes();
             let html = '';
             
             const activeEid = [];
@@ -454,17 +456,17 @@
                 html += `<div class="mt-6 mb-2 flex items-center gap-2 px-1"><i class="fas fa-star text-xs text-amber-500"></i><h3 class="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">${eidObj.name}</h3></div><div class="space-y-1">`;
                 html += list.map(m => {
                     const t = m.timings[eidKey]; const [h, mns] = t.time.split(':').map(Number); const numTime = `${h%12||12}:${String(mns).padStart(2,'0')}`; const suff = h>=12 ? 'PM' : 'AM';
-                    const passed = (h*60 + mns) < nowMinutes;
-                    const remainingText = passed ? '(Time Passed)' : getTimeRemaining(t.time);
+                    const remainingText = getTimeRemaining(t.time, eidKey);
+                    const passed = remainingText === '(Time Passed)';
                     return `
-                    <div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] border-amber-500 cursor-pointer active:scale-[0.98] transition-all animate-card ${passed ? 'opacity-40' : ''}">
+                    <div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] border-amber-500 cursor-pointer active:scale-[0.98] transition-all animate-card ${passed ? 'opacity-40 grayscale' : ''}">
                         <div class="flex-1 min-w-0 mr-4 flex items-center gap-2">
-                            <i class="fas fa-mosque text-[10px] text-amber-400"></i>
-                            <div class="min-w-0"><h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${m.name}</h4><p class="text-[9px] text-gray-400 truncate mt-0.5">${m.area}</p></div>
+                            <i class="fas fa-mosque text-[10px] ${passed ? 'text-gray-400' : 'text-amber-400'}"></i>
+                            <div class="min-w-0"><h4 class="font-bold ${passed ? 'text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-white'} text-sm truncate">${m.name}</h4><p class="text-[9px] text-gray-400 truncate mt-0.5">${m.area}</p></div>
                         </div>
                         <div class="text-right flex flex-col items-end">
-                            <div class="whitespace-nowrap"><span class="font-mono text-lg font-bold text-gray-800 dark:text-white tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>
-                            <div class="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded mt-1 inline-block">${remainingText}</div>
+                            <div class="whitespace-nowrap"><span class="font-mono text-lg font-bold ${passed ? 'text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-white'} tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>
+                            <div class="text-[9px] font-bold ${passed ? 'text-gray-400' : 'text-amber-600 bg-amber-50'} px-2 py-0.5 rounded mt-1 inline-block">${remainingText}</div>
                         </div>
                     </div>`;
                 }).join(''); html += `</div>`;
@@ -481,18 +483,18 @@
                 html += `<div class="mt-6 mb-2 flex items-center gap-2 px-1"><i class="fas ${pObj?.icon||'fa-clock'} text-xs ${isFirst ? 'text-brand-500' : 'text-gray-400'}"></i><h3 class="text-xs font-bold uppercase tracking-widest ${isFirst ? 'text-brand-600 dark:text-brand-400' : 'text-gray-400'}">${pName}</h3></div><div class="space-y-1">`;
                 html += list.map(m => {
                     const t = m.timings[pid]; const [h, mns] = t.time.split(':').map(Number); const numTime = `${h%12||12}:${String(mns).padStart(2,'0')}`; const suff = h>=12 ? 'PM' : 'AM';
-                    const passed = isFirst && (h*60 + mns) < nowMinutes && !(pid === 'fajr' && nowMinutes > 1200);
-                    const remainingText = passed ? '(Time Passed)' : (isFirst ? getTimeRemaining(t.time) : '');
+                    const remainingText = isFirst ? getTimeRemaining(t.time, pid) : '';
+                    const passed = isFirst && remainingText === '(Time Passed)';
                     const dateStamp = (!t.fixed && t.lastUpdated) ? `<div class="text-[8px] text-gray-300 mt-0.5">${formatUpdateDate(t.lastUpdated)}</div>` : '';
                     return `
-                    <div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] ${isFirst ? 'border-brand-500' : 'border-gray-200 dark:border-gray-600'} cursor-pointer active:scale-[0.98] transition-all animate-card ${passed ? 'opacity-40' : ''}">
+                    <div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] ${isFirst ? (passed ? 'border-gray-300' : 'border-brand-500') : 'border-gray-200 dark:border-gray-600'} cursor-pointer active:scale-[0.98] transition-all animate-card ${passed ? 'opacity-40 grayscale' : ''}">
                         <div class="flex-1 min-w-0 mr-4 flex items-center gap-2">
                             <i class="fas fa-mosque text-[10px] text-gray-400"></i>
-                            <div class="min-w-0"><h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${m.name}</h4><p class="text-[9px] text-gray-400 dark:text-gray-500 truncate mt-0.5">${m.area}</p></div>
+                            <div class="min-w-0"><h4 class="font-bold ${passed ? 'text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-white'} text-sm truncate">${m.name}</h4><p class="text-[9px] text-gray-400 dark:text-gray-500 truncate mt-0.5">${m.area}</p></div>
                         </div>
                         <div class="text-right flex flex-col items-end">
-                            <div class="whitespace-nowrap"><span class="font-mono text-lg font-bold text-gray-800 dark:text-white tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>
-                            ${isFirst ? `<div class="text-[9px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 px-2 py-0.5 rounded mt-1 inline-block">${remainingText}</div>` : ''}
+                            <div class="whitespace-nowrap"><span class="font-mono text-lg font-bold ${passed ? 'text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-white'} tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>
+                            ${isFirst ? `<div class="text-[9px] font-bold ${passed ? 'text-gray-400' : 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30'} px-2 py-0.5 rounded mt-1 inline-block">${remainingText}</div>` : ''}
                             ${dateStamp}
                         </div>
                     </div>`;
@@ -569,13 +571,8 @@
         
         function toggleTheme() { 
             const isDark = document.getElementById('theme_toggle').checked; 
-            if(isDark) {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-            }
+            if(isDark) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); } 
+            else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); }
             appSettings.theme = isDark ? 'dark' : 'light';
         }
 
