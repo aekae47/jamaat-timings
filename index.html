@@ -272,13 +272,13 @@
                         <i class="fas ${icon} text-xs w-4"></i> ${name}
                     </span>
                     <div class="text-right">
-                        <span class="${hasTime ? 'font-mono text-lg font-bold text-gray-800 dark:text-white' : 'text-[10px] text-gray-400 italic'}">${hasTime ? formatTime12(data.time) : '(Timing not entered)'}</span>
+                        <span class="${hasTime ? 'font-mono text-lg font-bold text-gray-800 dark:text-white' : 'text-[10px] text-gray-400 italic'}">${hasTime ? formatTime12(data.time, pid) : '(Timing not entered)'}</span>
                         ${hasTime ? dateStamp : ''}
                     </div>
                 </div>`; 
             }).join('') + specialPrayersList.map(sp => { 
                 if(sp.mode && !appSettings[sp.mode]) return ''; const data = m.timings[sp.id]; if(!data || !data.time) return ''; 
-                return `<div class="flex justify-between items-center p-3.5 rounded-xl bg-amber-50 border border-amber-100 dark:bg-amber-900/20 dark:border-amber-800 mt-2"><span class="font-bold text-sm text-amber-700 dark:text-amber-500"><i class="fas fa-star text-xs mr-2"></i> ${sp.name}</span><span class="font-mono text-lg font-bold text-gray-800 dark:text-white">${formatTime12(data.time)}</span></div>`; 
+                return `<div class="flex justify-between items-center p-3.5 rounded-xl bg-amber-50 border border-amber-100 dark:bg-amber-900/20 dark:border-amber-800 mt-2"><span class="font-bold text-sm text-amber-700 dark:text-amber-500"><i class="fas fa-star text-xs mr-2"></i> ${sp.name}</span><span class="font-mono text-lg font-bold text-gray-800 dark:text-white">${formatTime12(data.time, sp.id)}</span></div>`; 
             }).join(''); 
             document.getElementById('mosqueDetailModal').classList.remove('hidden'); 
         };
@@ -300,11 +300,14 @@
         async function loadSettings() {
             db.collection('settings').doc('global_modes').onSnapshot(doc => {
                 if(doc.exists) {
-                    appSettings = doc.data();
+                    const data = doc.data();
+                    Object.keys(appSettings).forEach(k => { if(k !== 'theme' && data[k] !== undefined) appSettings[k] = data[k]; });
                     updateSidebarToggles();
-                    if(appSettings.theme === 'dark') document.documentElement.classList.add('dark');
+                    const localTheme = localStorage.getItem('theme') || 'light';
+                    appSettings.theme = localTheme;
+                    if(localTheme === 'dark') document.documentElement.classList.add('dark');
                     else document.documentElement.classList.remove('dark');
-                    document.getElementById('theme_toggle').checked = appSettings.theme === 'dark';
+                    document.getElementById('theme_toggle').checked = localTheme === 'dark';
                     renderApp();
                 }
             });
@@ -450,9 +453,9 @@
                 if(list.length === 0) return;
                 html += `<div class="mt-6 mb-2 flex items-center gap-2 px-1"><i class="fas fa-star text-xs text-amber-500"></i><h3 class="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">${eidObj.name}</h3></div><div class="space-y-1">`;
                 html += list.map(m => {
-                    const t = m.timings[eidKey]; const [h, mns] = t.time.split(':'); const numTime = `${parseInt(h)%12||12}:${mns}`; const suff = parseInt(h)>=12 ? 'PM' : 'AM';
-                    const passed = (parseInt(h)*60 + parseInt(mns)) < nowMinutes;
-                    const remaining = `<div class="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded mt-1 inline-block">${passed ? '(Time Passed)' : getTimeRemaining(t.time)}</div>`;
+                    const t = m.timings[eidKey]; const [h, mns] = t.time.split(':').map(Number); const numTime = `${h%12||12}:${String(mns).padStart(2,'0')}`; const suff = h>=12 ? 'PM' : 'AM';
+                    const passed = (h*60 + mns) < nowMinutes;
+                    const remainingText = passed ? '(Time Passed)' : getTimeRemaining(t.time);
                     return `
                     <div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] border-amber-500 cursor-pointer active:scale-[0.98] transition-all animate-card ${passed ? 'opacity-40' : ''}">
                         <div class="flex-1 min-w-0 mr-4 flex items-center gap-2">
@@ -461,7 +464,7 @@
                         </div>
                         <div class="text-right flex flex-col items-end">
                             <div class="whitespace-nowrap"><span class="font-mono text-lg font-bold text-gray-800 dark:text-white tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>
-                            ${remaining}
+                            <div class="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded mt-1 inline-block">${remainingText}</div>
                         </div>
                     </div>`;
                 }).join(''); html += `</div>`;
@@ -479,7 +482,7 @@
                 html += list.map(m => {
                     const t = m.timings[pid]; const [h, mns] = t.time.split(':').map(Number); const numTime = `${h%12||12}:${String(mns).padStart(2,'0')}`; const suff = h>=12 ? 'PM' : 'AM';
                     const passed = isFirst && (h*60 + mns) < nowMinutes && !(pid === 'fajr' && nowMinutes > 1200);
-                    const remaining = isFirst ? `<div class="text-[9px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 px-2 py-0.5 rounded mt-1 inline-block">${passed ? '(Time Passed)' : getTimeRemaining(t.time)}</div>` : '';
+                    const remainingText = passed ? '(Time Passed)' : (isFirst ? getTimeRemaining(t.time) : '');
                     const dateStamp = (!t.fixed && t.lastUpdated) ? `<div class="text-[8px] text-gray-300 mt-0.5">${formatUpdateDate(t.lastUpdated)}</div>` : '';
                     return `
                     <div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] ${isFirst ? 'border-brand-500' : 'border-gray-200 dark:border-gray-600'} cursor-pointer active:scale-[0.98] transition-all animate-card ${passed ? 'opacity-40' : ''}">
@@ -489,7 +492,8 @@
                         </div>
                         <div class="text-right flex flex-col items-end">
                             <div class="whitespace-nowrap"><span class="font-mono text-lg font-bold text-gray-800 dark:text-white tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>
-                            ${remaining}${dateStamp}
+                            ${isFirst ? `<div class="text-[9px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 px-2 py-0.5 rounded mt-1 inline-block">${remainingText}</div>` : ''}
+                            ${dateStamp}
                         </div>
                     </div>`;
                 }).join(''); html += `</div>`;
@@ -511,8 +515,8 @@
             const hasLink = m.locationLink && m.locationLink.trim() !== '';
             let specialHTML = '';
             specialPrayersList.forEach(sp => {
-                if(appSettings[sp.mode] && m.timings[sp.id]?.time) {
-                    specialHTML += `<div class="flex justify-between px-2 py-1 bg-amber-50 dark:bg-amber-900/10 rounded border border-amber-100 dark:border-amber-900/30 mb-1"><span class="text-[9px] font-bold text-amber-700">${sp.name}</span><span class="text-[9px] font-mono font-bold text-amber-800 dark:text-amber-200">${formatTime12(m.timings[sp.id].time)}</span></div>`;
+                if(appSettings[sp.mode] && m.timings && m.timings[sp.id] && m.timings[sp.id].time) {
+                    specialHTML += `<div class="flex justify-between px-2 py-1 bg-amber-50 dark:bg-amber-900/10 rounded border border-amber-100 dark:border-amber-900/30 mb-1"><span class="text-[9px] font-bold text-amber-700">${sp.name}</span><span class="text-[9px] font-mono font-bold text-amber-800 dark:text-amber-200">${formatTime12(m.timings[sp.id].time, sp.id)}</span></div>`;
                 }
             });
             
@@ -550,13 +554,31 @@
                 </div>`;
         }
 
-        function formatTime12(time24) { if (!time24 || time24.trim() === '') return '--:--'; if (time24.includes('.')) return `${time24} <span class="text-[9px]">Parahs</span>`; const [h, m] = time24.split(':'); let hours = parseInt(h); const suffix = hours >= 12 ? 'PM' : 'AM'; hours = hours % 12 || 12; return `${hours}:${m}<span class="text-[10px] ml-0.5 font-normal text-gray-400">${suffix}</span>`; }
+        function formatTime12(time24, pid = null) { 
+            if (!time24 || time24.trim() === '') return '--:--'; 
+            if (pid === 'taraweeh') return `${time24} <span class="text-[9px] uppercase font-sans font-bold text-gray-400">Parahs</span>`;
+            if (time24.includes('.') && !pid) return `${time24} <span class="text-[9px]">Parahs</span>`; 
+            const [h, m] = time24.split(':'); let hours = parseInt(h); const suffix = hours >= 12 ? 'PM' : 'AM'; hours = hours % 12 || 12; return `${hours}:${m}<span class="text-[10px] ml-0.5 font-normal text-gray-400">${suffix}</span>`; 
+        }
+
         function showToast() { const t = document.getElementById('toast'); t.classList.remove('opacity-0', 'translate-y-4'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-4'), 2000); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         function setViewMode(mode) { viewMode = mode; renderApp(); }
         function updateNavState() { document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('text-brand-600'); b.classList.add('text-gray-400'); }); document.getElementById(`nav_${viewMode}`).classList.add('text-brand-600'); document.getElementById(`nav_${viewMode}`).classList.remove('text-gray-400'); }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('sidebarOverlay').classList.toggle('hidden'); }
-        async function toggleTheme() { const isDark = document.getElementById('theme_toggle').checked; appSettings.theme = isDark ? 'dark':'light'; await db.collection('settings').doc('global_modes').update({theme: appSettings.theme}); }
+        
+        function toggleTheme() { 
+            const isDark = document.getElementById('theme_toggle').checked; 
+            if(isDark) {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            }
+            appSettings.theme = isDark ? 'dark' : 'light';
+        }
+
         function handleSearch() { searchQuery = document.getElementById('searchInput').value.toLowerCase(); renderApp(); }
         async function toggleMode(key) { appSettings[key] = !appSettings[key]; await db.collection('settings').doc('global_modes').update(appSettings); }
         function updateSidebarToggles() { document.getElementById('mode_ramadan').checked = appSettings.ramadan; document.getElementById('mode_eidFitr').checked = appSettings.eidFitr; document.getElementById('mode_eidAdha').checked = appSettings.eidAdha; document.getElementById('mode_qiyam').checked = appSettings.qiyam; document.getElementById('mode_lateIsha').checked = appSettings.lateIsha; }
@@ -564,8 +586,8 @@
         async function deleteMosque() { const id = document.getElementById('editMosqueId').value; if(confirm("Delete this mosque?")) { closeModal('mosqueInfoModal'); await db.collection('mosques').doc(id).delete(); showToast(); } }
         async function saveTimings() { const m = mosques.find(x => x.id === editingTimingsId); if (!m) return; let updated = {...m.timings}; const nowStr = new Date().toISOString(); prayersList.forEach(p => { const el = document.getElementById(`input_${p.id}`); const fix = document.getElementById(`fix_${p.id}`); if(el) updated[p.id] = { time: el.value, fixed: fix.checked, lastUpdated: nowStr }; }); specialPrayersList.forEach(sp => { const el = document.getElementById(`input_${sp.id}`); if(el) updated[sp.id] = { time: el.value }; }); closeModal('editTimingModal'); m.timings = updated; renderApp(); await db.collection('mosques').doc(editingTimingsId).update({timings: updated}); showToast(); }
         function openEditTiming(id) { editingTimingsId = id; const m = mosques.find(x => x.id === id); document.getElementById('timingModalMosqueName').innerText = m.name; document.getElementById('timingEditorContainer').innerHTML = prayersList.map(p => createTimeRow(p.id, p.name, m.timings[p.id])).join(''); document.getElementById('specialPrayersContainer').innerHTML = specialPrayersList.map(sp => createTimeRow(sp.id, sp.name, m.timings[sp.id] || {time:''}, true, sp.id === 'taraweeh' ? 'parahs' : 'time')).join(''); document.getElementById('specialPrayersContainer').classList.add('hidden'); document.getElementById('specialChevron').classList.remove('rotate-180'); document.getElementById('editTimingModal').classList.remove('hidden'); }
-        function createTimeRow(key, name, data, isSpecial = false, type = 'time') { const timeVal = data?.time || ''; const isFixed = data?.fixed || false; if (type === 'parahs') return `<div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 pb-3 mb-3 last:border-0"><div class="flex items-center gap-3 mb-2"><span class="font-bold text-xs w-16 text-gray-500 uppercase tracking-wide">${name}</span><input type="number" step="0.25" id="input_${key}" value="${timeVal}" placeholder="1.25" class="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-center font-mono text-base font-bold text-gray-800 dark:text-white outline-none focus:border-brand-500"><button onclick="clearTimeInput('${key}')" class="text-gray-400 hover:text-red-500 w-8 h-8"><i class="fas fa-trash text-xs"></i></button></div></div>`; return `<div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 pb-3 mb-3 last:border-0 last:mb-0"><div class="flex items-center gap-3 mb-2"><span class="font-bold text-sm text-gray-700 dark:text-gray-300 w-20">${name}</span><div class="flex-1 relative h-10"><div id="display_${key}" class="absolute inset-0 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl flex items-center justify-center font-mono text-base font-bold text-gray-800 dark:text-white pointer-events-none transition-colors">${formatTime12(timeVal)}</div><input type="time" id="input_${key}" value="${timeVal}" onchange="updateDisplayLayer('${key}')" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"></div><button onclick="clearTimeInput('${key}')" class="text-gray-400 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"><i class="fas fa-trash text-xs"></i></button></div><div class="flex justify-between items-center pl-[5.5rem] pr-12">${!isSpecial ? `<label class="flex items-center gap-2 cursor-pointer group"><input type="checkbox" id="fix_${key}" ${isFixed ? 'checked' : ''} class="w-4 h-4 accent-brand-600 rounded cursor-pointer"><span class="text-[10px] uppercase font-bold text-gray-400 group-hover:text-brand-600 transition-colors">Same all year</span></label>` : '<div></div>'}<div class="flex gap-2"><button onclick="adjustTime('${key}', -5)" class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-brand-100 dark:hover:bg-brand-900 rounded-md text-[10px] font-bold text-gray-600 dark:text-gray-300 transition-colors">- 5</button><button onclick="adjustTime('${key}', 5)" class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-brand-100 dark:hover:bg-brand-900 rounded-md text-[10px] font-bold text-gray-600 dark:text-gray-300 transition-colors">+ 5</button></div></div></div>`; }
-        function updateDisplayLayer(key) { const input = document.getElementById(`input_${key}`); const display = document.getElementById(`display_${key}`); if (input && display) display.innerHTML = input.value ? formatTime12(input.value) : '--:--'; }
+        function createTimeRow(key, name, data, isSpecial = false, type = 'time') { const timeVal = data?.time || ''; const isFixed = data?.fixed || false; if (type === 'parahs') return `<div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 pb-3 mb-3 last:border-0"><div class="flex items-center gap-3 mb-2"><span class="font-bold text-xs w-16 text-gray-500 uppercase tracking-wide">${name}</span><input type="number" step="0.25" id="input_${key}" value="${timeVal}" placeholder="1.25" class="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-center font-mono text-base font-bold text-gray-800 dark:text-white outline-none focus:border-brand-500"><button onclick="clearTimeInput('${key}')" class="text-gray-400 hover:text-red-500 w-8 h-8"><i class="fas fa-trash text-xs"></i></button></div></div>`; return `<div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 pb-3 mb-3 last:border-0 last:mb-0"><div class="flex items-center gap-3 mb-2"><span class="font-bold text-sm text-gray-700 dark:text-gray-300 w-20">${name}</span><div class="flex-1 relative h-10"><div id="display_${key}" class="absolute inset-0 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl flex items-center justify-center font-mono text-base font-bold text-gray-800 dark:text-white pointer-events-none transition-colors">${formatTime12(timeVal, key)}</div><input type="time" id="input_${key}" value="${timeVal}" onchange="updateDisplayLayer('${key}')" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"></div><button onclick="clearTimeInput('${key}')" class="text-gray-400 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"><i class="fas fa-trash text-xs"></i></button></div><div class="flex justify-between items-center pl-[5.5rem] pr-12">${!isSpecial ? `<label class="flex items-center gap-2 cursor-pointer group"><input type="checkbox" id="fix_${key}" ${isFixed ? 'checked' : ''} class="w-4 h-4 accent-brand-600 rounded cursor-pointer"><span class="text-[10px] uppercase font-bold text-gray-400 group-hover:text-brand-600 transition-colors">Same all year</span></label>` : '<div></div>'}<div class="flex gap-2"><button onclick="adjustTime('${key}', -5)" class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-brand-100 dark:hover:bg-brand-900 rounded-md text-[10px] font-bold text-gray-600 dark:text-gray-300 transition-colors">- 5</button><button onclick="adjustTime('${key}', 5)" class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-brand-100 dark:hover:bg-brand-900 rounded-md text-[10px] font-bold text-gray-600 dark:text-gray-300 transition-colors">+ 5</button></div></div></div>`; }
+        function updateDisplayLayer(key) { const input = document.getElementById(`input_${key}`); const display = document.getElementById(`display_${key}`); if (input && display) display.innerHTML = input.value ? formatTime12(input.value, key) : '--:--'; }
         function clearTimeInput(key) { document.getElementById(`input_${key}`).value = ''; updateDisplayLayer(key); }
         function adjustTime(key, mins) { const input = document.getElementById(`input_${key}`); if (!input.value) return; const [h, m] = input.value.split(':').map(Number); const date = new Date(); date.setHours(h); date.setMinutes(m + mins); const newH = String(date.getHours()).padStart(2, '0'); const newM = String(date.getMinutes()).padStart(2, '0'); input.value = `${newH}:${newM}`; updateDisplayLayer(key); }
         function toggleSpecialPrayers() { document.getElementById('specialPrayersContainer').classList.toggle('hidden'); document.getElementById('specialChevron').classList.toggle('rotate-180'); }
