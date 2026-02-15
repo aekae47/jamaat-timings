@@ -272,9 +272,8 @@
         let currentUser = null, userRole = 'public';
         let availableCities = new Set(['Hyderabad']);
 
-        // Personal User Data (Syncs with Firebase if logged in, otherwise LocalStorage)
         let personalLists = { Favorites: [], Home: [], Work: [] };
-        let customOrder = []; // Array of mosque IDs in user's preferred order
+        let customOrder = [];
 
         const prayersList = [ { id: 'fajr', name: 'Fajr', icon: 'fa-cloud-sun' }, { id: 'zuhr', name: 'Ẓuhr', icon: 'fa-sun' }, { id: 'asr', name: 'Aṣr', icon: 'fa-cloud' }, { id: 'isha', name: 'Ishā', icon: 'fa-moon' }, { id: 'jumma', name: 'Jumma', icon: 'fa-users' } ];
         const sequenceOrder = ['fajr', 'zuhr', 'asr', 'isha']; 
@@ -300,8 +299,6 @@
             const localOrder = localStorage.getItem('customOrder');
             if (localLists) personalLists = JSON.parse(localLists);
             if (localOrder) customOrder = JSON.parse(localOrder);
-            
-            // Fallback if favorites is empty
             if (currentList === 'Favorites' && personalLists.Favorites.length === 0) {
                 currentList = 'All';
             }
@@ -352,9 +349,7 @@
         };
 
         window.movePersonalOrder = (id, dir) => {
-            // Ensure ID is in customOrder
             if (!customOrder.includes(id)) {
-                // If not present, initialize it from the current visible list
                 customOrder = mosques.map(m => m.id);
             }
             const idx = customOrder.indexOf(id);
@@ -417,8 +412,20 @@
             const displayOrder = ['fajr', 'zuhr', 'jumma', 'asr', 'isha'];
             timingDiv.innerHTML = displayOrder.map(pid => {
                 const data = m.timings[pid]; const hasTime = data && data.time; const pObj = prayersList.find(p => p.id === pid);
-                return `<div class="flex justify-between items-center p-3.5 rounded-xl mb-2 bg-gray-50 border border-gray-100 dark:bg-gray-700/30 transition-colors ${!hasTime ? 'opacity-40' : ''}"><span class="font-bold text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2"><i class="fas ${pObj.icon} text-xs w-4"></i> ${pObj.name}</span><div class="text-right"><span class="${hasTime ? 'font-mono text-lg font-bold text-gray-800 dark:text-white' : 'text-[10px] text-gray-400 italic'}">${hasTime ? window.formatTime12(data.time, pid) : '(Timing not entered)'}</span>${hasTime && data.lastUpdated && !data.fixed ? `<div class="text-[8px] text-gray-300">${window.formatUpdateDate(data.lastUpdated)}</div>` : ''}</div></div>`;
+                const isIshaBox = pid === 'isha';
+                const taraweehData = (isIshaBox && appSettings.ramadan && m.timings['taraweeh']?.time) ? m.timings['taraweeh'].time : null;
+
+                return `
+                <div class="flex justify-between items-center p-3.5 rounded-xl mb-2 bg-gray-50 border border-gray-100 dark:bg-gray-700/30 transition-colors ${!hasTime ? 'opacity-40' : ''} ${taraweehData ? 'ring-2 ring-amber-400 dark:ring-amber-500 bg-amber-50 dark:bg-amber-900/10' : ''}">
+                    <span class="font-bold text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2"><i class="fas ${pObj.icon} text-xs w-4"></i> ${pObj.name}</span>
+                    <div class="text-right">
+                        <span class="${hasTime ? 'font-mono text-lg font-bold text-gray-800 dark:text-white' : 'text-[10px] text-gray-400 italic'}">${hasTime ? window.formatTime12(data.time, pid) : '(Timing not entered)'}</span>
+                        ${hasTime && data.lastUpdated && !data.fixed ? `<div class="text-[8px] text-gray-300">${window.formatUpdateDate(data.lastUpdated)}</div>` : ''}
+                        ${taraweehData ? `<div class="text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5">Tarāweeḥ: ${taraweehData} Pārahs</div>` : ''}
+                    </div>
+                </div>`;
             }).join('') + specialPrayersList.map(sp => {
+                if(sp.id === 'taraweeh') return ''; // Handled inside Isha box
                 if(!appSettings[sp.mode] || !m.timings[sp.id]?.time) return '';
                 return `<div class="flex justify-between items-center p-3.5 rounded-xl bg-amber-50 border border-amber-100 dark:bg-amber-900/20 mt-2"><span class="font-bold text-sm text-amber-700 dark:text-amber-500"><i class="fas fa-star text-xs mr-2"></i> ${sp.name}</span><span class="font-mono text-lg font-bold text-gray-800 dark:text-white">${window.formatTime12(m.timings[sp.id].time, sp.id)}</span></div>`;
             }).join('');
@@ -501,7 +508,6 @@
         window.toggleSpecialPrayers = () => { const el = document.getElementById('specialPrayersContainer'); el.classList.toggle('hidden'); document.getElementById('specialChevron').classList.toggle('rotate-180'); };
         window.adjustTime = (key, mins) => { const el = document.getElementById(`input_${key}`); if(!el.value) return; const [h, m] = el.value.split(':').map(Number); const d = new Date(); d.setHours(h, m + mins); el.value = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; el.dispatchEvent(new Event('change')); };
 
-        // --- RENDER LOGIC ---
         function getFilteredAndSortedMosques() {
             let filtered = mosques.filter(m => (m.city || 'Hyderabad') === appSettings.city);
             if (currentList !== 'All') {
@@ -512,7 +518,6 @@
                 filtered = filtered.filter(m => m.name.toLowerCase().includes(searchQuery) || m.area.toLowerCase().includes(searchQuery));
             }
             
-            // Apply custom sort order
             filtered.sort((a, b) => {
                 const idxA = customOrder.indexOf(a.id);
                 const idxB = customOrder.indexOf(b.id);
@@ -556,7 +561,7 @@
             let html = '';
             ['eidFitr', 'eidAdha'].forEach(eidKey => {
                 if(!appSettings[eidKey]) return;
-                const sublist = list.filter(m => m.timings[eidKey]?.time);
+                const sublist = list.filter(m => m.timings[eidKey]?.time).sort((a,b) => a.timings[eidKey].time.localeCompare(b.timings[eidKey].time));
                 if(sublist.length) {
                     html += `<div class="mt-6 mb-2 flex items-center gap-2 px-1"><i class="fas fa-star text-xs text-amber-500"></i><h3 class="text-xs font-bold text-amber-600 uppercase tracking-widest">${specialPrayersList.find(s=>s.id===eidKey).name}</h3></div>`;
                     sublist.forEach(m => {
@@ -566,12 +571,28 @@
                 }
             });
             sequence.forEach((pid, idx) => {
-                const sublist = list.filter(m => m.timings[pid]?.time);
+                const sublist = list.filter(m => m.timings[pid]?.time).sort((a,b) => a.timings[pid].time.localeCompare(b.timings[pid].time));
                 if(!sublist.length) return;
                 html += `<div class="mt-6 mb-2 flex items-center gap-2 px-1"><i class="fas ${prayersList.find(p=>p.id===pid).icon} text-xs ${idx===0?'text-brand-500':'text-gray-400'}"></i><h3 class="text-xs font-bold uppercase tracking-widest ${idx===0?'text-brand-600 dark:text-brand-400':'text-gray-400'}">${prayersList.find(p=>p.id===pid).name}</h3></div>`;
                 sublist.forEach(m => {
                     const t = m.timings[pid]; const [h, mins] = t.time.split(':'); const rem = idx === 0 ? getTimeRemaining(t.time, pid) : ''; const passed = rem === '(Time Passed)';
-                    html += `<div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] ${idx===0?(passed?'border-gray-300':'border-brand-500'):'border-gray-200'} mb-1 transition-all ${passed?'opacity-40 grayscale':''}"><div class="flex-1 flex items-center gap-2"><i class="fas fa-mosque text-[10px] text-gray-400"></i><div><h4 class="font-bold text-sm truncate dark:text-white">${m.name}</h4><p class="text-[9px] text-gray-400">${m.area}</p></div></div><div class="text-right"><div class="font-mono font-bold text-lg dark:text-white">${parseInt(h)%12||12}:${mins}<span class="text-[9px] ml-1">${h>=12?'PM':'AM'}</span></div>${idx===0?`<div class="text-[9px] font-bold ${passed?'text-gray-400':'text-brand-600 bg-brand-50 dark:bg-brand-900/40'} px-2 rounded">${rem}</div>`:''}</div></div>`;
+                    const taraweehData = (pid === 'isha' && appSettings.ramadan && m.timings['taraweeh']?.time) ? m.timings['taraweeh'].time : null;
+                    
+                    html += `
+                    <div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] ${idx===0?(passed?'border-gray-300':'border-brand-500'):'border-gray-200'} mb-1 transition-all ${passed?'opacity-40 grayscale':''} ${taraweehData ? 'ring-2 ring-amber-400 dark:ring-amber-500' : ''}">
+                        <div class="flex-1 flex items-center gap-2">
+                            <i class="fas fa-mosque text-[10px] text-gray-400"></i>
+                            <div>
+                                <h4 class="font-bold text-sm truncate dark:text-white">${m.name}</h4>
+                                <p class="text-[9px] text-gray-400">${m.area}</p>
+                                ${taraweehData ? `<p class="text-[8px] font-bold text-amber-600 dark:text-amber-400 uppercase">Tarāweeḥ: ${taraweehData} Pārahs</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-mono font-bold text-lg dark:text-white">${parseInt(h)%12||12}:${mins}<span class="text-[9px] ml-1">${h>=12?'PM':'AM'}</span></div>
+                            ${idx===0?`<div class="text-[9px] font-bold ${passed?'text-gray-400':'text-brand-600 bg-brand-50 dark:bg-brand-900/40'} px-2 rounded">${rem}</div>`:''}
+                        </div>
+                    </div>`;
                 });
             });
             container.innerHTML = html;
@@ -585,12 +606,42 @@
 
         function createAdminCard(m) {
             let specHTML = '';
-            specialPrayersList.forEach(sp => { if(appSettings[sp.mode] === true && m.timings && m.timings[sp.id]?.time) specHTML += `<div class="flex justify-between px-2 py-1 bg-amber-50 dark:bg-amber-900/10 rounded mb-1 text-[9px] font-bold"><span class="text-amber-700">${sp.name}</span><span class="text-amber-800 dark:text-white">${window.formatTime12(m.timings[sp.id].time, sp.id)}</span></div>`; });
+            specialPrayersList.forEach(sp => { 
+                if(sp.id === 'taraweeh') return; // Handled below within Isha
+                if(appSettings[sp.mode] === true && m.timings && m.timings[sp.id]?.time) 
+                    specHTML += `<div class="flex justify-between px-2 py-1 bg-amber-50 dark:bg-amber-900/10 rounded mb-1 text-[9px] font-bold"><span class="text-amber-700">${sp.name}</span><span class="text-amber-800 dark:text-white">${window.formatTime12(m.timings[sp.id].time, sp.id)}</span></div>`; 
+            });
             const isFav = personalLists.Favorites.includes(m.id);
-            return `<div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border-l-[3px] border-r-[3px] border-l-brand-500 border-r-gray-100 dark:border-r-gray-700 mb-3 animate-card"><div class="flex justify-between items-start mb-3"><div class="cursor-pointer flex items-start gap-3" onclick="openMosqueDetail('${m.id}')"><i class="fas fa-mosque text-brand-500 mt-1"></i><div><h2 class="text-sm font-bold text-gray-800 dark:text-white leading-tight">${m.name}</h2><p class="text-[10px] text-gray-400">${m.area}</p></div></div><div class="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-1"><button onclick="window.movePersonalOrder('${m.id}',-1)" class="w-6 h-6 rounded flex items-center justify-center text-xs text-gray-400"><i class="fas fa-chevron-up"></i></button><button onclick="window.movePersonalOrder('${m.id}',1)" class="w-6 h-6 rounded flex items-center justify-center text-xs text-gray-400"><i class="fas fa-chevron-down"></i></button><div class="w-px h-3 bg-gray-200 dark:bg-gray-600 mx-1"></div><button onclick="openPersonalListModal('${m.id}')" class="w-6 h-6 rounded flex items-center justify-center text-xs ${isFav ? 'text-brand-600' : 'text-gray-400'}"><i class="fas fa-list-ul"></i></button>${(userRole==='admin'||userRole==='volunteer') ? `<button onclick="window.openMosqueModal('${m.id}')" class="w-6 h-6 text-brand-600 rounded flex items-center justify-center ml-1"><i class="fas fa-pencil-alt text-xs"></i></button>` : ''}</div></div><div class="grid grid-cols-5 gap-0.5 text-center border-t border-gray-50 dark:border-gray-700 pt-3 mb-3">${prayersList.map(p => {
-                const t = m.timings[p.id]?.time; if(!t) return `<div onclick="window.tryAction('edit',()=>window.openEditTiming('${m.id}'))" class="opacity-30"><div class="text-[8px] font-bold text-gray-400 mb-1 flex flex-col items-center gap-0.5 uppercase"><i class="fas ${p.icon} text-[10px]"></i> ${p.name.slice(0,3)}</div>-</div>`;
-                const [h, mins] = t.split(':'); return `<div onclick="window.tryAction('edit',()=>window.openEditTiming('${m.id}'))" class="cursor-pointer py-1"><div class="text-[8px] font-bold text-brand-500/80 mb-1 flex flex-col items-center gap-0.5 uppercase"><i class="fas ${p.icon} text-[10px]"></i> ${p.name.slice(0,3)}</div><div class="font-mono text-sm font-bold dark:text-white">${parseInt(h)%12||12}:${mins}<span class="text-[7px] block">${h>=12?'PM':'AM'}</span></div></div>`;
-            }).join('')}</div><div>${specHTML}</div><div class="flex border-t border-gray-100 dark:border-gray-700 pt-2"><button onclick="document.getElementById('notes_${m.id}').classList.toggle('hidden')" class="flex-1 text-[10px] font-bold text-gray-400 uppercase">Notes <i class="fas fa-chevron-down"></i></button><a href="${m.locationLink||'#'}" target="_blank" class="flex-1 text-[10px] font-bold text-brand-600 text-center uppercase">Maps <i class="fas fa-location-arrow"></i></a></div><div id="notes_${m.id}" class="hidden bg-gray-50 dark:bg-gray-700/30 p-3 text-[10px] border-t mt-2 dark:text-gray-300">${m.address||'No notes.'}</div></div>`;
+            return `<div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border-l-[3px] border-r-[3px] border-l-brand-500 border-r-gray-100 dark:border-r-gray-700 mb-3 animate-card">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="cursor-pointer flex items-start gap-3" onclick="openMosqueDetail('${m.id}')">
+                        <i class="fas fa-mosque text-brand-500 mt-1"></i>
+                        <div><h2 class="text-sm font-bold text-gray-800 dark:text-white leading-tight">${m.name}</h2><p class="text-[10px] text-gray-400">${m.area}</p></div>
+                    </div>
+                    <div class="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-1">
+                        <button onclick="window.movePersonalOrder('${m.id}',-1)" class="w-6 h-6 rounded flex items-center justify-center text-xs text-gray-400"><i class="fas fa-chevron-up"></i></button>
+                        <button onclick="window.movePersonalOrder('${m.id}',1)" class="w-6 h-6 rounded flex items-center justify-center text-xs text-gray-400"><i class="fas fa-chevron-down"></i></button>
+                        <div class="w-px h-3 bg-gray-200 dark:bg-gray-600 mx-1"></div>
+                        <button onclick="openPersonalListModal('${m.id}')" class="w-6 h-6 rounded flex items-center justify-center text-xs ${isFav ? 'text-brand-600' : 'text-gray-400'}"><i class="fas fa-list-ul"></i></button>
+                        ${(userRole==='admin'||userRole==='volunteer') ? `<button onclick="window.openMosqueModal('${m.id}')" class="w-6 h-6 text-brand-600 rounded flex items-center justify-center ml-1"><i class="fas fa-pencil-alt text-xs"></i></button>` : ''}
+                    </div>
+                </div>
+                <div class="grid grid-cols-5 gap-0.5 text-center border-t border-gray-50 dark:border-gray-700 pt-3 mb-3">
+                    ${prayersList.map(p => {
+                        const t = m.timings[p.id]?.time; if(!t) return `<div onclick="window.tryAction('edit',()=>window.openEditTiming('${m.id}'))" class="opacity-30"><div class="text-[8px] font-bold text-gray-400 mb-1 flex flex-col items-center gap-0.5 uppercase"><i class="fas ${p.icon} text-[10px]"></i> ${p.name.slice(0,3)}</div>-</div>`;
+                        const [h, mins] = t.split(':');
+                        const taraweehData = (p.id === 'isha' && appSettings.ramadan && m.timings['taraweeh']?.time) ? m.timings['taraweeh'].time : null;
+                        return `
+                        <div onclick="window.tryAction('edit',()=>window.openEditTiming('${m.id}'))" class="cursor-pointer py-1 ${taraweehData ? 'ring-2 ring-amber-400 rounded-lg bg-amber-50 dark:bg-amber-900/20' : ''}">
+                            <div class="text-[8px] font-bold text-brand-500/80 mb-1 flex flex-col items-center gap-0.5 uppercase"><i class="fas ${p.icon} text-[10px]"></i> ${p.name.slice(0,3)}</div>
+                            <div class="font-mono text-sm font-bold dark:text-white">${parseInt(h)%12||12}:${mins}<span class="text-[7px] block">${h>=12?'PM':'AM'}</span></div>
+                            ${taraweehData ? `<div class="text-[6px] font-bold text-amber-600">${taraweehData}P</div>` : ''}
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div>${specHTML}</div>
+                <div class="flex border-t border-gray-100 dark:border-gray-700 pt-2"><button onclick="document.getElementById('notes_${m.id}').classList.toggle('hidden')" class="flex-1 text-[10px] font-bold text-gray-400 uppercase">Notes <i class="fas fa-chevron-down"></i></button><a href="${m.locationLink||'#'}" target="_blank" class="flex-1 text-[10px] font-bold text-brand-600 text-center uppercase">Maps <i class="fas fa-location-arrow"></i></a></div><div id="notes_${m.id}" class="hidden bg-gray-50 dark:bg-gray-700/30 p-3 text-[10px] border-t mt-2 dark:text-gray-300">${m.address||'No notes.'}</div>
+            </div>`;
         }
 
         function createTimeRow(key, name, data, isSpecial = false, type = 'time') { 
