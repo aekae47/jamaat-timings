@@ -3,11 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0d9488">
+    <meta name="description" content="Jamaat on Time - Local Masjid Prayer Timings">
+    
     <title>Jamaat on Time</title>
     
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="assets/jot-icon-1-512.png">
+    <link rel="icon" type="image/png" href="assets/jot-icon-1-512.png">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@700&family=Source+Code+Pro:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@700&family=Google+Sans+Pro:wght@600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -22,7 +29,7 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Montserrat', 'sans-serif'], serif: ['Playfair Display', 'serif'], mono: ['Source Code Pro', 'monospace'] },
+                    fontFamily: { sans: ['Montserrat', 'sans-serif'], serif: ['Playfair Display', 'serif'], mono: ['Google Sans Pro', 'monospace'] },
                     colors: { brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' } }
                 }
             }
@@ -238,6 +245,15 @@
     <div id="toast" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-2xl opacity-0 transition-all duration-300 z-50 pointer-events-none translate-y-4"><i class="fas fa-check-circle text-brand-400 mr-2"></i><span>Saved</span></div>
 
     <script>
+        // --- SERVICE WORKER REGISTRATION ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('Service Worker Registered!', reg.scope))
+                    .catch(err => console.log('Service Worker Failed:', err));
+            });
+        }
+
         // --- DEFINE GLOBALS IMMEDIATELY ---
         window.updateSidebarToggles = () => {
             const elR = document.getElementById('mode_ramadan'); if(elR) elR.checked = appSettings.ramadan;
@@ -272,6 +288,13 @@
         const firebaseConfig = { apiKey: "AIzaSyAEzXz42Zih7M6yY97_4e8_E1BNsjbJhnI", authDomain: "timings-ak.firebaseapp.com", projectId: "timings-ak", storageBucket: "timings-ak.firebasestorage.app", messagingSenderId: "1082790063422", appId: "1:1082790063422:web:be439e3d932475a9fe906f" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        
+        // --- ENABLE OFFLINE PERSISTENCE ---
+        db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+            if (err.code == 'failed-precondition') console.log('Persistence failed: Multiple tabs open');
+            else if (err.code == 'unimplemented') console.log('Persistence not supported by browser');
+        });
+
         const auth = firebase.auth();
         const provider = new firebase.auth.GoogleAuthProvider();
 
