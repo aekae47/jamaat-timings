@@ -1,0 +1,3 @@
+بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+
+https://aekae47.github.io/jamaat-timings/
