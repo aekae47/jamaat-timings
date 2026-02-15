@@ -101,9 +101,13 @@
                 </div>
             </div>
         </div>
+
+        <button id="btnInstall" class="hidden mt-auto w-full flex items-center justify-center gap-2 py-3 bg-brand-600 text-white rounded-xl text-xs font-bold shadow-lg hover:bg-brand-700 transition-colors uppercase tracking-widest">
+            <i class="fas fa-download"></i> Install App
+        </button>
     </div>
 
-    <div class="fixed top-0 w-full z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-gray-700 h-[155px]" id="mainHeader">
+    <div class="fixed top-0 w-full z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-gray-700" id="mainHeader">
         <div class="flex flex-col items-center justify-center pt-2 pb-1 relative h-[50px]">
             <button onclick="toggleSidebar()" class="absolute left-3 top-2.5 text-gray-500 hover:text-brand-600 w-8 h-8 flex items-center justify-center rounded-full transition-colors"><i class="fas fa-bars text-lg"></i></button>
             <h1 class="text-lg font-serif font-bold text-brand-600 dark:text-brand-400 tracking-tight">Jamaat on Time</h1>
@@ -128,12 +132,12 @@
             </div>
         </div>
 
-        <div id="filterBarContainer" class="w-full border-t border-gray-50 dark:border-gray-700/50 transition-all duration-300 overflow-hidden">
+        <div id="filterBarContainer" class="w-full border-t border-gray-50 dark:border-gray-700/50 bg-inherit">
             <div class="flex overflow-x-auto no-scrollbar px-3 py-2 gap-2" id="listBar"></div>
         </div>
     </div>
 
-    <div class="pt-[160px] pb-24 max-w-md mx-auto min-h-screen px-3" id="mainContainer">
+    <div class="pt-[165px] pb-24 max-w-md mx-auto min-h-screen px-3" id="mainContainer">
         <div class="text-center mt-32 text-gray-400 flex flex-col items-center">
             <i class="fas fa-circle-notch fa-spin text-2xl mb-3 text-brand-300"></i>
             <p class="text-xs font-bold uppercase tracking-widest opacity-50">Starting...</p>
@@ -157,7 +161,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-xs p-6 shadow-2xl animate-card">
             <div class="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fas fa-lock"></i></div>
             <h3 class="text-lg font-serif font-bold mb-2 text-gray-800">Restricted Access</h3>
-            <p class="text-xs text-gray-500 mb-6">Only admins and volunteers can edit these details. Apply at our <a href="https://t.me/+cjZjOMlnINUxMmU1" target="_blank" class="text-brand-600 underline font-bold">Telegram group</a></p>
+            <p class="text-xs text-gray-500 mb-6">Only admins and volunteers can perform this action. Apply at our <a href="https://t.me/+cjZjOMlnINUxMmU1" target="_blank" class="text-brand-600 underline font-bold">Telegram group</a></p>
             <button onclick="closeModal('accessDeniedModal')" class="w-full py-3 bg-gray-100 rounded-xl text-xs font-bold uppercase">Close</button>
         </div>
     </div>
@@ -245,6 +249,25 @@
     <div id="toast" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-2xl opacity-0 transition-all duration-300 z-50 pointer-events-none translate-y-4"><i class="fas fa-check-circle text-brand-400 mr-2"></i><span>Saved</span></div>
 
     <script>
+        // --- PWA INSTALLATION LOGIC ---
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('btnInstall').classList.remove('hidden');
+        });
+
+        document.getElementById('btnInstall')?.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    document.getElementById('btnInstall').classList.add('hidden');
+                }
+                deferredPrompt = null;
+            }
+        });
+
         // --- SERVICE WORKER REGISTRATION ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -289,7 +312,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         
-        // --- ENABLE OFFLINE PERSISTENCE ---
         db.enablePersistence({ synchronizeTabs: true }).catch(err => {
             if (err.code == 'failed-precondition') console.log('Persistence failed: Multiple tabs open');
             else if (err.code == 'unimplemented') console.log('Persistence not supported by browser');
@@ -358,6 +380,7 @@
         };
 
         window.openEditTiming = (id) => { editingTimingsId = id; const m = mosques.find(x => x.id === id); document.getElementById('timingModalMosqueName').innerText = m.name; document.getElementById('timingEditorContainer').innerHTML = prayersList.map(p => createTimeRow(p.id, p.name, m.timings[p.id])).join(''); document.getElementById('specialPrayersContainer').innerHTML = specialPrayersList.map(sp => createTimeRow(sp.id, sp.name, m.timings[sp.id] || {time:''}, true, sp.id === 'taraweeh' ? 'parahs' : 'time')).join(''); document.getElementById('specialPrayersContainer').classList.add('hidden'); document.getElementById('specialChevron').classList.remove('rotate-180'); document.getElementById('editTimingModal').classList.remove('hidden'); };
+        
         window.openCityModal = () => {
             document.getElementById('citySelectionModal').classList.remove('hidden');
             const list = document.getElementById('cityListContainer'); list.innerHTML = '';
@@ -370,6 +393,9 @@
         };
 
         window.addNewCity = async () => { 
+            if (userRole !== 'volunteer' && userRole !== 'admin') {
+                return document.getElementById('accessDeniedModal').classList.remove('hidden');
+            }
             const val = document.getElementById('newCityInput').value.trim();
             if(val) {
                 const formatted = val.charAt(0).toUpperCase() + val.slice(1).toLowerCase();
@@ -400,7 +426,6 @@
         window.handleLogout = () => auth.signOut();
         window.handleLogin = () => auth.signInWithPopup(provider);
 
-        // --- RENDER LOGIC ---
         function renderApp() { renderHeader(); renderListBar(); const c = document.getElementById('mainContainer'); if(!c) return; if (viewMode === 'next') renderNextPrayerMode(c); else renderListMode(c); window.updateNavState(); }
         function renderHeader() { const isNext = viewMode === 'next'; document.getElementById('headerClockView')?.classList.toggle('hidden', !isNext); document.getElementById('headerSearchView')?.classList.toggle('hidden', isNext); document.getElementById('btnAddFloating')?.classList.toggle('hidden', isNext); document.getElementById('fridayBadge')?.classList.toggle('hidden', new Date().getDay() !== 5); }
         function renderListBar() { const container = document.getElementById('listBar'); if(!container) return; const listsToShow = ['Favorites', 'All', ...Array.from(allLists).filter(l => l!=='Favorites')]; container.innerHTML = listsToShow.map(list => `<button onclick="switchList('${list}')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap border ${currentList === list ? 'bg-brand-600 text-white border-brand-600 shadow-md' : 'bg-white dark:bg-gray-700 text-gray-500 border-gray-200 dark:border-gray-600'}">${list}</button>`).join(''); }
