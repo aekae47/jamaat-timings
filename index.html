@@ -98,17 +98,15 @@
         </div>
 
         <div id="headerClockView" class="w-full pb-3">
-            <div class="flex flex-col items-center justify-center pt-2">
-                <div class="flex items-center justify-center gap-4 pl-4">
-                    <div class="text-5xl font-mono font-bold text-gray-800 dark:text-white tracking-tighter leading-none flex items-baseline gap-1" id="bigClock">
-                        --:-- <span class="text-lg font-sans font-bold text-gray-400">AM</span>
-                    </div>
-                    <button onclick="openCityModal()" class="flex flex-col items-center justify-center text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors group cursor-pointer pt-2">
-                        <i class="fas fa-map-marker-alt text-lg mb-0.5 group-hover:scale-110 transition-transform"></i>
-                        <span class="text-[9px] font-bold uppercase tracking-widest max-w-[60px] truncate" id="headerCityName">HYD</span>
-                    </button>
+            <div class="flex flex-col items-center justify-center pt-2 cursor-pointer" onclick="openCityModal()">
+                <div class="text-5xl font-mono font-bold text-gray-800 dark:text-white tracking-tighter leading-none flex items-baseline gap-1" id="bigClock">
+                    --:-- <span class="text-lg font-sans font-bold text-gray-400">AM</span>
                 </div>
-                <div id="fridayBadge" class="hidden mt-1 bg-brand-50 text-brand-600 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest">It's Friday!</div>
+                <div class="flex items-center gap-1.5 mt-1 text-gray-400 dark:text-gray-500 group transition-colors hover:text-brand-600">
+                    <i class="fas fa-map-marker-alt text-[10px]"></i>
+                    <span class="text-[10px] font-bold uppercase tracking-[0.2em]" id="headerCityName">HYDERABAD</span>
+                </div>
+                <div id="fridayBadge" class="hidden mt-2 bg-brand-50 text-brand-600 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest">It's Friday!</div>
             </div>
         </div>
 
@@ -158,8 +156,7 @@
                     <button onclick="addNewCity()" class="bg-brand-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow hover:bg-brand-700"><i class="fas fa-plus"></i></button>
                 </div>
             </div>
-            <div id="cityListContainer" class="max-h-[60vh] overflow-y-auto no-scrollbar p-2">
-                </div>
+            <div id="cityListContainer" class="max-h-[60vh] overflow-y-auto no-scrollbar p-2"></div>
         </div>
     </div>
 
@@ -326,7 +323,6 @@
         }
 
         async function loadSettings() {
-            // Load theme and city from local storage instantly
             const localTheme = localStorage.getItem('theme') || 'light';
             const localCity = localStorage.getItem('city') || 'Hyderabad';
             appSettings.theme = localTheme;
@@ -337,7 +333,6 @@
             document.getElementById('theme_toggle').checked = localTheme === 'dark';
             document.getElementById('headerCityName').innerText = appSettings.city;
 
-            // Load cloud settings for visibility modes
             db.collection('settings').doc('global_modes').onSnapshot(doc => {
                 if(doc.exists) {
                     const data = doc.data();
@@ -354,7 +349,7 @@
                 else {
                     mosques = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     allLists = new Set(['Favorites', 'Home', 'Work']);
-                    availableCities = new Set(['Hyderabad']); // Default
+                    availableCities = new Set(['Hyderabad']);
                     
                     mosques.forEach(m => {
                         if(!m.timings) m.timings={}; 
@@ -363,9 +358,7 @@
                         if(m.city) availableCities.add(m.city);
                     });
                     
-                    // Add current city if it's new (e.g., added manually but no mosques yet)
                     if(appSettings.city) availableCities.add(appSettings.city);
-
                     mosques.sort((a, b) => (a.order || 0) - (b.order || 0));
                     renderApp();
                 }
@@ -419,14 +412,7 @@
             if(newTag) selected.push(newTag);
             if(selected.length === 0) selected.push('Favorites');
             if (!name) return alert("Enter Name"); 
-            const data = { 
-                name, 
-                area: document.getElementById('m_area').value||'', 
-                lists: selected, 
-                locationLink: document.getElementById('m_link').value, 
-                address: document.getElementById('m_notes').value,
-                city: appSettings.city // Save with current city
-            }; 
+            const data = { name, area: document.getElementById('m_area').value||'', lists: selected, locationLink: document.getElementById('m_link').value, address: document.getElementById('m_notes').value, city: appSettings.city }; 
             
             try { 
                 let savedId = id;
@@ -493,78 +479,39 @@
         }
 
         function renderNextPrayerMode(container) {
-            const sequence = getSequence(); 
-            let html = '';
-            
+            const sequence = getSequence(); let html = '';
             const activeEid = [];
             if(appSettings.eidFitr) activeEid.push('eidFitr');
             if(appSettings.eidAdha) activeEid.push('eidAdha');
-
             activeEid.forEach(eidKey => {
                 const eidObj = specialPrayersList.find(s => s.id === eidKey);
-                // Filter by city
-                let list = mosques.filter(m => {
-                    const mCity = m.city || 'Hyderabad';
-                    return mCity === appSettings.city && (m.lists.includes(currentList) || currentList === 'All') && m.timings[eidKey]?.time;
-                });
+                let list = mosques.filter(m => (m.city || 'Hyderabad') === appSettings.city && (m.lists.includes(currentList) || currentList === 'All') && m.timings[eidKey]?.time);
                 if(list.length === 0) return;
                 html += `<div class="mt-6 mb-2 flex items-center gap-2 px-1"><i class="fas fa-star text-xs text-amber-500"></i><h3 class="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">${eidObj.name}</h3></div><div class="space-y-1">`;
                 html += list.map(m => {
                     const t = m.timings[eidKey]; const [h, mns] = t.time.split(':').map(Number); const numTime = `${h%12||12}:${String(mns).padStart(2,'0')}`; const suff = h>=12 ? 'PM' : 'AM';
-                    return `
-                    <div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] border-amber-500 cursor-pointer active:scale-[0.98] transition-all animate-card">
-                        <div class="flex-1 min-w-0 mr-4 flex items-center gap-2">
-                            <i class="fas fa-mosque text-[10px] text-amber-400"></i>
-                            <div class="min-w-0"><h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${m.name}</h4><p class="text-[9px] text-gray-400 truncate mt-0.5">${m.area}</p></div>
-                        </div>
-                        <div class="text-right flex flex-col items-end">
-                            <div class="whitespace-nowrap"><span class="font-mono text-lg font-bold text-gray-800 dark:text-white tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>
-                        </div>
-                    </div>`;
+                    return `<div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] border-amber-500 cursor-pointer active:scale-[0.98] transition-all animate-card"><div class="flex-1 min-w-0 mr-4 flex items-center gap-2"><i class="fas fa-mosque text-[10px] text-amber-400"></i><div class="min-w-0"><h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${m.name}</h4><p class="text-[9px] text-gray-400 truncate mt-0.5">${m.area}</p></div></div><div class="text-right flex flex-col items-end"><div class="whitespace-nowrap"><span class="font-mono text-lg font-bold text-gray-800 dark:text-white tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div></div></div>`;
                 }).join(''); html += `</div>`;
             });
-
             sequence.forEach((pid, index) => {
-                const isFirst = index === 0; 
-                const pObj = prayersList.find(p=>p.id===pid); 
-                const pName = pObj?.name || pid;
-                
-                // Filter by city
-                let list = mosques.filter(m => {
-                    const mCity = m.city || 'Hyderabad';
-                    return mCity === appSettings.city && (m.lists.includes(currentList) || currentList === 'All') && m.timings && m.timings[pid]?.time;
-                });
-
+                const isFirst = index === 0; const pObj = prayersList.find(p=>p.id===pid); const pName = pObj?.name || pid;
+                let list = mosques.filter(m => (m.city || 'Hyderabad') === appSettings.city && (m.lists.includes(currentList) || currentList === 'All') && m.timings && m.timings[pid]?.time);
                 list.sort((a, b) => a.timings[pid].time.localeCompare(b.timings[pid].time));
                 if (list.length === 0) return;
-
                 html += `<div class="mt-6 mb-2 flex items-center gap-2 px-1"><i class="fas ${pObj?.icon||'fa-clock'} text-xs ${isFirst ? 'text-brand-500' : 'text-gray-400'}"></i><h3 class="text-xs font-bold uppercase tracking-widest ${isFirst ? 'text-brand-600 dark:text-brand-400' : 'text-gray-400'}">${pName}</h3></div><div class="space-y-1">`;
                 html += list.map(m => {
                     const t = m.timings[pid]; const [h, mns] = t.time.split(':').map(Number); const numTime = `${h%12||12}:${String(mns).padStart(2,'0')}`; const suff = h>=12 ? 'PM' : 'AM';
                     const remainingText = isFirst ? getTimeRemaining(t.time, pid) : '';
                     const passed = isFirst && remainingText === '(Time Passed)';
                     const dateStamp = (!t.fixed && t.lastUpdated) ? `<div class="text-[8px] text-gray-300 mt-0.5">${formatUpdateDate(t.lastUpdated)}</div>` : '';
-                    return `
-                    <div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] ${isFirst ? (passed ? 'border-gray-300' : 'border-brand-500') : 'border-gray-200 dark:border-gray-600'} cursor-pointer active:scale-[0.98] transition-all animate-card ${passed ? 'opacity-40 grayscale' : ''}">
-                        <div class="flex-1 min-w-0 mr-4 flex items-center gap-2">
-                            <i class="fas fa-mosque text-[10px] text-gray-400"></i>
-                            <div class="min-w-0"><h4 class="font-bold ${passed ? 'text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-white'} text-sm truncate">${m.name}</h4><p class="text-[9px] text-gray-400 dark:text-gray-500 truncate mt-0.5">${m.area}</p></div>
-                        </div>
-                        <div class="text-right flex flex-col items-end">
-                            <div class="whitespace-nowrap"><span class="font-mono text-lg font-bold ${passed ? 'text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-white'} tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>
-                            ${isFirst ? `<div class="text-[9px] font-bold ${passed ? 'text-gray-400' : 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30'} px-2 py-0.5 rounded mt-1 inline-block">${remainingText}</div>` : ''}
-                            ${dateStamp}
-                        </div>
-                    </div>`;
+                    return `<div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] ${isFirst ? (passed ? 'border-gray-300' : 'border-brand-500') : 'border-gray-200 dark:border-gray-600'} cursor-pointer active:scale-[0.98] transition-all animate-card ${passed ? 'opacity-40 grayscale' : ''}"><div class="flex-1 min-w-0 mr-4 flex items-center gap-2"><i class="fas fa-mosque text-[10px] text-gray-400"></i><div class="min-w-0"><h4 class="font-bold ${passed ? 'text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-white'} text-sm truncate">${m.name}</h4><p class="text-[9px] text-gray-400 dark:text-gray-500 truncate mt-0.5">${m.area}</p></div></div><div class="text-right flex flex-col items-end"><div class="whitespace-nowrap"><span class="font-mono text-lg font-bold ${passed ? 'text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-white'} tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>${isFirst ? `<div class="text-[9px] font-bold ${passed ? 'text-gray-400' : 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30'} px-2 py-0.5 rounded mt-1 inline-block">${remainingText}</div>` : ''}${dateStamp}</div></div>`;
                 }).join(''); html += `</div>`;
             });
             container.innerHTML = html;
         }
 
         function renderListMode(container) {
-            // Filter by city
             let filtered = mosques.filter(m => (m.city || 'Hyderabad') === appSettings.city);
-            
             if(currentList !== 'All') filtered = filtered.filter(m => m.lists.includes(currentList));
             if(searchQuery) filtered = filtered.filter(m => m.name.toLowerCase().includes(searchQuery) || m.area.toLowerCase().includes(searchQuery));
             if(filtered.length === 0) { container.innerHTML = `<div class="text-center mt-20 text-gray-400 text-xs">No mosques found in ${appSettings.city}.</div>`; return; }
@@ -616,11 +563,9 @@
         function toggleSpecialPrayers() { document.getElementById('specialPrayersContainer').classList.toggle('hidden'); document.getElementById('specialChevron').classList.toggle('rotate-180'); }
         function exportCSV() { if (!mosques.length) return alert("No data"); let csv = "Name,Area,Lists,Fajr,Zuhr,Asr,Isha,Jumma,Address\n"; mosques.forEach(m => { const t = m.timings; csv += [`"${m.name}"`, `"${m.area}"`, `"${m.lists.join('|')}"`, t.fajr?.time, t.zuhr?.time, t.asr?.time, t.isha?.time, t.jumma?.time, `"${(m.address||'').replace(/\n/g, ' ')}"`].join(",") + "\n"; }); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = "jamaat_backup_" + new Date().toISOString().slice(0,10) + ".csv"; link.click(); }
 
-        // City Management Functions
         function openCityModal() { 
             document.getElementById('citySelectionModal').classList.remove('hidden');
             const list = document.getElementById('cityListContainer');
-            // Sort availableCities alphabetically
             const sortedCities = Array.from(availableCities).sort();
             list.innerHTML = sortedCities.map(c => `
                 <div class="flex justify-between items-center p-3 mb-1 rounded-lg ${appSettings.city === c ? 'bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800' : 'bg-gray-50 dark:bg-gray-700/30'} cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" onclick="selectCity('${c}')">
@@ -633,7 +578,7 @@
         function selectCity(name) {
             appSettings.city = name;
             localStorage.setItem('city', name);
-            document.getElementById('headerCityName').innerText = name;
+            document.getElementById('headerCityName').innerText = name.toUpperCase();
             closeModal('citySelectionModal');
             renderApp();
         }
@@ -642,7 +587,6 @@
             const input = document.getElementById('newCityInput');
             const val = input.value.trim();
             if(val) {
-                // Capitalize first letter of each word
                 const formatted = val.replace(/\w\S*/g, (w) => (w.replace(/^\w/, (c) => c.toUpperCase())));
                 availableCities.add(formatted);
                 selectCity(formatted);
