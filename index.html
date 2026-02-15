@@ -18,7 +18,6 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -161,11 +160,27 @@
         </button>
     </div>
 
+    <div id="personalListModal" class="hidden fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-card">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-serif font-bold dark:text-white">Add to Personal List</h3>
+                <button onclick="closeModal('personalListModal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+            </div>
+            <input type="hidden" id="listTargetMosqueId">
+            <div id="personalListContainer" class="space-y-2 mb-6 max-h-[40vh] overflow-y-auto no-scrollbar"></div>
+            <div class="flex gap-2">
+                <input type="text" id="newPersonalListInput" placeholder="New list name..." class="flex-1 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-xs font-bold dark:text-white outline-none">
+                <button onclick="createNewPersonalList()" class="bg-brand-600 text-white px-4 py-2 rounded-lg text-xs font-bold"><i class="fas fa-plus"></i></button>
+            </div>
+            <button onclick="closeModal('personalListModal')" class="w-full mt-6 py-3 bg-gray-100 dark:bg-gray-700 dark:text-white rounded-xl text-xs font-bold uppercase">Close</button>
+        </div>
+    </div>
+
     <div id="accessDeniedModal" class="hidden fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 text-center">
         <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-xs p-6 shadow-2xl animate-card">
             <div class="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fas fa-lock"></i></div>
             <h3 class="text-lg font-serif font-bold mb-2 text-gray-800 dark:text-white">Restricted Access</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-6">Only admins and volunteers can perform this action. Apply at our <a href="https://t.me/+cjZjOMlnINUxMmU1" target="_blank" class="text-brand-600 underline font-bold">Telegram group</a></p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-6">Only admins and volunteers can edit database details. Apply at our <a href="https://t.me/+cjZjOMlnINUxMmU1" target="_blank" class="text-brand-600 underline font-bold">Telegram group</a></p>
             <button onclick="closeModal('accessDeniedModal')" class="w-full py-3 bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded-xl text-xs font-bold uppercase">Close</button>
         </div>
     </div>
@@ -221,7 +236,6 @@
             <div class="space-y-4">
                 <div><label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Name</label><input type="text" id="m_name" class="input-field font-bold" placeholder="Masjid-e-..."></div>
                 <div><label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Area</label><input type="text" id="m_area" class="input-field" placeholder="Area"></div>
-                <div class="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl border border-gray-100 dark:border-gray-700"><label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Lists</label><div id="listChipsContainer" class="flex flex-wrap gap-2 mb-2"></div><input type="text" id="m_new_list" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-brand-500 dark:text-white" placeholder="+ Add New List Tag"></div>
                 <div><label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Maps Link</label><input type="url" id="m_link" class="input-field text-xs" placeholder="https://maps.google..."></div>
                 <div><label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Location Instructions</label><textarea id="m_notes" rows="2" class="input-field text-xs" placeholder="Notes..."></textarea></div>
             </div>
@@ -251,32 +265,16 @@
     <div id="toast" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-2xl opacity-0 transition-all duration-300 z-50 pointer-events-none translate-y-4"><i class="fas fa-check-circle text-brand-400 mr-2"></i><span>Saved</span></div>
 
     <script>
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            document.getElementById('pwaInstallBtn').classList.remove('hidden');
-        });
-        document.getElementById('pwaInstallBtn')?.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') document.getElementById('pwaInstallBtn').classList.add('hidden');
-                deferredPrompt = null;
-            }
-        });
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./service-worker.js').catch(err => console.log('SW Failed:', err));
-            });
-        }
-
-        let viewMode = 'next', currentList = 'Favorites', searchQuery = '', mosques = [], allLists = new Set(['Favorites', 'Home', 'Work']);
-        let availableCities = new Set(['Hyderabad']);
+        // --- GLOBALS ---
+        let viewMode = 'next', currentList = 'Favorites', searchQuery = '', mosques = [];
         let editingTimingsId = null, currentDetailId = null, currentTimeDisplay = '', currentTargetPrayer = 'fajr';
         let appSettings = { ramadan: false, eidFitr: false, eidAdha: false, qiyam: false, lateIsha: false, theme: 'light', city: 'Hyderabad' };
         let currentUser = null, userRole = 'public';
+        let availableCities = new Set(['Hyderabad']);
+
+        // Personal User Data (Syncs with Firebase if logged in, otherwise LocalStorage)
+        let personalLists = { Favorites: [], Home: [], Work: [] };
+        let customOrder = []; // Array of mosque IDs in user's preferred order
 
         const prayersList = [ { id: 'fajr', name: 'Fajr', icon: 'fa-cloud-sun' }, { id: 'zuhr', name: 'Ẓuhr', icon: 'fa-sun' }, { id: 'asr', name: 'Aṣr', icon: 'fa-cloud' }, { id: 'isha', name: 'Ishā', icon: 'fa-moon' }, { id: 'jumma', name: 'Jumma', icon: 'fa-users' } ];
         const sequenceOrder = ['fajr', 'zuhr', 'asr', 'isha']; 
@@ -288,16 +286,93 @@
         const auth = firebase.auth();
         const provider = new firebase.auth.GoogleAuthProvider();
 
-        window.updateSidebarToggles = () => {
-            ['ramadan', 'eidFitr', 'eidAdha', 'qiyam', 'lateIsha'].forEach(k => {
-                const el = document.getElementById(`mode_${k}`); if(el) el.checked = appSettings[k];
-            });
+        // --- DATA PERSISTENCE ---
+        function saveUserData() {
+            localStorage.setItem('personalLists', JSON.stringify(personalLists));
+            localStorage.setItem('customOrder', JSON.stringify(customOrder));
+            if (currentUser) {
+                db.collection('users').doc(currentUser.uid).set({ personalLists, customOrder }, { merge: true });
+            }
+        }
+
+        function loadUserData() {
+            const localLists = localStorage.getItem('personalLists');
+            const localOrder = localStorage.getItem('customOrder');
+            if (localLists) personalLists = JSON.parse(localLists);
+            if (localOrder) customOrder = JSON.parse(localOrder);
+            
+            // Fallback if favorites is empty
+            if (currentList === 'Favorites' && personalLists.Favorites.length === 0) {
+                currentList = 'All';
+            }
+        }
+
+        // --- PERSONAL LIST LOGIC ---
+        window.openPersonalListModal = (id) => {
+            document.getElementById('listTargetMosqueId').value = id;
+            renderPersonalLists();
+            document.getElementById('personalListModal').classList.remove('hidden');
         };
+
+        function renderPersonalLists() {
+            const id = document.getElementById('listTargetMosqueId').value;
+            const container = document.getElementById('personalListContainer');
+            container.innerHTML = Object.keys(personalLists).map(listName => {
+                const isAdded = personalLists[listName].includes(id);
+                return `
+                    <div class="flex justify-between items-center p-3 rounded-xl ${isAdded ? 'bg-brand-50 dark:bg-brand-900/30 border-brand-200' : 'bg-gray-50 dark:bg-gray-700/30 border-gray-100'} border cursor-pointer" onclick="togglePersonalList('${listName}', '${id}')">
+                        <span class="text-sm font-bold ${isAdded ? 'text-brand-600' : 'text-gray-600 dark:text-gray-300'}">${listName}</span>
+                        <i class="fas ${isAdded ? 'fa-check-circle text-brand-600' : 'fa-circle text-gray-200 dark:text-gray-600'}"></i>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.togglePersonalList = (listName, id) => {
+            if (personalLists[listName].includes(id)) {
+                personalLists[listName] = personalLists[listName].filter(x => x !== id);
+            } else {
+                personalLists[listName].push(id);
+            }
+            saveUserData();
+            renderPersonalLists();
+            renderApp();
+        };
+
+        window.createNewPersonalList = () => {
+            const input = document.getElementById('newPersonalListInput');
+            const name = input.value.trim();
+            if (name && !personalLists[name]) {
+                personalLists[name] = [];
+                input.value = '';
+                saveUserData();
+                renderPersonalLists();
+                renderListBar();
+            }
+        };
+
+        window.movePersonalOrder = (id, dir) => {
+            // Ensure ID is in customOrder
+            if (!customOrder.includes(id)) {
+                // If not present, initialize it from the current visible list
+                customOrder = mosques.map(m => m.id);
+            }
+            const idx = customOrder.indexOf(id);
+            const targetIdx = idx + dir;
+            if (targetIdx >= 0 && targetIdx < customOrder.length) {
+                const temp = customOrder[idx];
+                customOrder[idx] = customOrder[targetIdx];
+                customOrder[targetIdx] = temp;
+                saveUserData();
+                renderApp();
+            }
+        };
+
+        // --- UTILS ---
         window.closeModal = (id) => document.getElementById(id)?.classList.add('hidden');
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('sidebarOverlay').classList.toggle('hidden'); };
         window.setViewMode = (mode) => { viewMode = mode; renderApp(); };
         window.switchList = (name) => { currentList = name; renderApp(); renderListBar(); };
-        window.toggleChip = (el) => el.classList.toggle('active');
         window.formatTime12 = (time24, pid = null) => { 
             if (!time24 || time24.trim() === '') return '--:--'; 
             if (pid === 'taraweeh') return `${time24} <span class="text-[9px] uppercase font-bold text-gray-400">Pārahs</span>`;
@@ -354,15 +429,12 @@
             document.getElementById('mosqueInfoModal').classList.remove('hidden'); 
             const isEdit = id !== null; document.getElementById('mosqueModalTitle').innerText = isEdit ? 'Edit Masjid' : 'Add Masjid'; document.getElementById('editMosqueId').value = id || ''; 
             const delBtn = document.getElementById('btnDeleteMosqueHeader'); if(isEdit) delBtn.style.display = 'flex'; else delBtn.style.display = 'none';
-            const container = document.getElementById('listChipsContainer'); container.innerHTML = Array.from(allLists).map(l => `<button type="button" onclick="window.toggleChip(this)" class="list-btn">${l}</button>`).join('');
             if (isEdit) { 
                 const m = mosques.find(x => x.id === id); if(m) {
                     document.getElementById('m_name').value = m.name; document.getElementById('m_area').value = m.area; document.getElementById('m_link').value = m.locationLink || ''; document.getElementById('m_notes').value = m.address || ''; 
-                    container.querySelectorAll('.list-btn').forEach(chip => { if(m.lists?.includes(chip.innerText)) chip.classList.add('active'); });
                 }
             } else { 
                 document.getElementById('m_name').value = 'Masjid-e-'; document.getElementById('m_area').value = ''; document.getElementById('m_link').value = ''; document.getElementById('m_notes').value = ''; 
-                container.querySelectorAll('.list-btn').forEach(btn => { if(btn.innerText === 'Favorites') btn.classList.add('active'); });
             } 
         };
 
@@ -392,7 +464,7 @@
         window.saveMosqueInfo = async (goToTimings = false) => {
             if (userRole !== 'volunteer' && userRole !== 'admin') return;
             const id = document.getElementById('editMosqueId').value;
-            const data = { name: document.getElementById('m_name').value, area: document.getElementById('m_area').value, city: appSettings.city, lists: Array.from(document.querySelectorAll('#listChipsContainer .list-btn.active')).map(c=>c.innerText), locationLink: document.getElementById('m_link').value, address: document.getElementById('m_notes').value };
+            const data = { name: document.getElementById('m_name').value, area: document.getElementById('m_area').value, city: appSettings.city, locationLink: document.getElementById('m_link').value, address: document.getElementById('m_notes').value };
             if(!data.name) return alert("Name required");
             let savedId = id; 
             if(id) await db.collection('mosques').doc(id).update(data); 
@@ -422,7 +494,6 @@
         };
 
         window.deleteMosque = async () => { if(confirm("Delete this masjid?")) { await db.collection('mosques').doc(document.getElementById('editMosqueId').value).delete(); closeModal('mosqueInfoModal'); showToast(); } };
-        window.moveMosque = async (id, dir) => { const idx = mosques.findIndex(m=>m.id===id); if(idx===-1) return; const tIdx = idx+dir; if(tIdx<0 || tIdx>=mosques.length) return; const m1=mosques[idx], m2=mosques[tIdx]; const o1=m1.order, o2=m2.order; await db.collection('mosques').doc(m1.id).update({order:o2}); await db.collection('mosques').doc(m2.id).update({order:o1}); };
         window.toggleMode = async (key) => { if(userRole !== 'admin') { document.getElementById(`mode_${key}`).checked = !document.getElementById(`mode_${key}`).checked; return window.tryAction('admin', ()=>{}); } appSettings[key] = !appSettings[key]; await db.collection('settings').doc('global_modes').set(appSettings, {merge: true}); };
         window.toggleTheme = () => { const isDark = document.getElementById('theme_toggle').checked; document.documentElement.classList.toggle('dark', isDark); localStorage.setItem('theme', isDark ? 'dark' : 'light'); appSettings.theme = isDark ? 'dark' : 'light'; };
         window.handleLogout = () => auth.signOut();
@@ -430,7 +501,31 @@
         window.toggleSpecialPrayers = () => { const el = document.getElementById('specialPrayersContainer'); el.classList.toggle('hidden'); document.getElementById('specialChevron').classList.toggle('rotate-180'); };
         window.adjustTime = (key, mins) => { const el = document.getElementById(`input_${key}`); if(!el.value) return; const [h, m] = el.value.split(':').map(Number); const d = new Date(); d.setHours(h, m + mins); el.value = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; el.dispatchEvent(new Event('change')); };
 
+        // --- RENDER LOGIC ---
+        function getFilteredAndSortedMosques() {
+            let filtered = mosques.filter(m => (m.city || 'Hyderabad') === appSettings.city);
+            if (currentList !== 'All') {
+                const personalList = personalLists[currentList] || [];
+                filtered = filtered.filter(m => personalList.includes(m.id));
+            }
+            if (searchQuery) {
+                filtered = filtered.filter(m => m.name.toLowerCase().includes(searchQuery) || m.area.toLowerCase().includes(searchQuery));
+            }
+            
+            // Apply custom sort order
+            filtered.sort((a, b) => {
+                const idxA = customOrder.indexOf(a.id);
+                const idxB = customOrder.indexOf(b.id);
+                if (idxA === -1 && idxB === -1) return (b.order || 0) - (a.order || 0);
+                if (idxA === -1) return 1;
+                if (idxB === -1) return -1;
+                return idxA - idxB;
+            });
+            return filtered;
+        }
+
         function renderApp() { renderHeader(); renderListBar(); const c = document.getElementById('mainContainer'); if(!c) return; if (viewMode === 'next') renderNextPrayerMode(c); else renderListMode(c); updateNavState(); }
+        
         function renderHeader() { 
             const isNext = viewMode === 'next'; 
             document.getElementById('headerClockView')?.classList.toggle('hidden', !isNext); 
@@ -438,13 +533,22 @@
             document.getElementById('mainHeader').style.height = isNext ? '115px' : '95px';
             const wrapper = document.getElementById('scrollWrapper');
             if(wrapper) wrapper.className = isNext ? 'pt-[115px] max-w-md mx-auto px-3' : 'pt-[95px] max-w-md mx-auto px-3';
-            document.getElementById('btnAddFloating')?.classList.toggle('hidden', isNext); 
+            document.getElementById('btnAddFloating')?.classList.toggle('hidden', isNext || (userRole !== 'volunteer' && userRole !== 'admin')); 
             document.getElementById('fridayBadge')?.classList.toggle('hidden', new Date().getDay() !== 5); 
         }
-        function renderListBar() { const container = document.getElementById('listBar'); if(!container) return; const listsToShow = ['Favorites', 'All', ...Array.from(allLists).filter(l => l!=='Favorites')]; container.innerHTML = listsToShow.map(list => `<button onclick="switchList('${list}')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap border ${currentList === list ? 'bg-brand-600 text-white border-brand-600 shadow-md' : 'bg-white dark:bg-gray-700 text-gray-500 border-gray-200 dark:border-gray-600'}">${list}</button>`).join(''); }
+
+        function renderListBar() { 
+            const container = document.getElementById('listBar'); if(!container) return; 
+            const coreLists = ['All', 'Favorites'];
+            const others = Object.keys(personalLists).filter(l => l !== 'Favorites');
+            const listsToShow = [...coreLists, ...others];
+            container.innerHTML = listsToShow.map(list => `<button onclick="switchList('${list}')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap border ${currentList === list ? 'bg-brand-600 text-white border-brand-600 shadow-md' : 'bg-white dark:bg-gray-700 text-gray-500 border-gray-200 dark:border-gray-600'}">${list}</button>`).join(''); 
+        }
+
         function updateNavState() { document.querySelectorAll('.nav-btn').forEach(b => { b.classList.toggle('text-brand-600', b.id === `nav_${viewMode}`); b.classList.toggle('text-gray-400', b.id !== `nav_${viewMode}`); }); }
 
         function renderNextPrayerMode(container) {
+            const list = getFilteredAndSortedMosques();
             const sequence = (function() {
                 let startKey = currentTargetPrayer === 'jumma' ? 'zuhr' : currentTargetPrayer; let idx = sequenceOrder.indexOf(startKey);
                 let seq = []; for(let i=0; i<4; i++) { let pid = sequenceOrder[(idx + i) % 4]; if (pid === 'zuhr' && new Date().getDay() === 5) pid = 'jumma'; seq.push(pid); } return seq;
@@ -452,20 +556,20 @@
             let html = '';
             ['eidFitr', 'eidAdha'].forEach(eidKey => {
                 if(!appSettings[eidKey]) return;
-                const list = mosques.filter(m => (m.city||'Hyderabad') === appSettings.city && m.timings[eidKey]?.time);
-                if(list.length) {
+                const sublist = list.filter(m => m.timings[eidKey]?.time);
+                if(sublist.length) {
                     html += `<div class="mt-6 mb-2 flex items-center gap-2 px-1"><i class="fas fa-star text-xs text-amber-500"></i><h3 class="text-xs font-bold text-amber-600 uppercase tracking-widest">${specialPrayersList.find(s=>s.id===eidKey).name}</h3></div>`;
-                    list.forEach(m => {
+                    sublist.forEach(m => {
                         const t = m.timings[eidKey].time; const [h, mins] = t.split(':');
                         html += `<div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] border-amber-500 mb-1 animate-card"><div class="flex-1 mr-4 flex items-center gap-2"><i class="fas fa-mosque text-[10px] text-amber-400"></i><div><h4 class="font-bold text-sm truncate dark:text-white">${m.name}</h4><p class="text-[9px] text-gray-400">${m.area}</p></div></div><div class="text-right font-mono font-bold text-lg dark:text-white">${parseInt(h)%12||12}:${mins}<span class="text-[9px] ml-1">${h>=12?'PM':'AM'}</span></div></div>`;
                     });
                 }
             });
             sequence.forEach((pid, idx) => {
-                const list = mosques.filter(m => (m.city||'Hyderabad') === appSettings.city && (m.lists.includes(currentList) || currentList === 'All') && m.timings[pid]?.time);
-                if(!list.length) return;
+                const sublist = list.filter(m => m.timings[pid]?.time);
+                if(!sublist.length) return;
                 html += `<div class="mt-6 mb-2 flex items-center gap-2 px-1"><i class="fas ${prayersList.find(p=>p.id===pid).icon} text-xs ${idx===0?'text-brand-500':'text-gray-400'}"></i><h3 class="text-xs font-bold uppercase tracking-widest ${idx===0?'text-brand-600 dark:text-brand-400':'text-gray-400'}">${prayersList.find(p=>p.id===pid).name}</h3></div>`;
-                list.sort((a,b)=>a.timings[pid].time.localeCompare(b.timings[pid].time)).forEach(m => {
+                sublist.forEach(m => {
                     const t = m.timings[pid]; const [h, mins] = t.time.split(':'); const rem = idx === 0 ? getTimeRemaining(t.time, pid) : ''; const passed = rem === '(Time Passed)';
                     html += `<div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] ${idx===0?(passed?'border-gray-300':'border-brand-500'):'border-gray-200'} mb-1 transition-all ${passed?'opacity-40 grayscale':''}"><div class="flex-1 flex items-center gap-2"><i class="fas fa-mosque text-[10px] text-gray-400"></i><div><h4 class="font-bold text-sm truncate dark:text-white">${m.name}</h4><p class="text-[9px] text-gray-400">${m.area}</p></div></div><div class="text-right"><div class="font-mono font-bold text-lg dark:text-white">${parseInt(h)%12||12}:${mins}<span class="text-[9px] ml-1">${h>=12?'PM':'AM'}</span></div>${idx===0?`<div class="text-[9px] font-bold ${passed?'text-gray-400':'text-brand-600 bg-brand-50 dark:bg-brand-900/40'} px-2 rounded">${rem}</div>`:''}</div></div>`;
                 });
@@ -474,15 +578,16 @@
         }
 
         function renderListMode(container) {
-            const filtered = mosques.filter(m => (m.city || 'Hyderabad') === appSettings.city && (currentList==='All'||m.lists.includes(currentList)) && (m.name.toLowerCase().includes(searchQuery)||m.area.toLowerCase().includes(searchQuery)));
-            if(!filtered.length) { container.innerHTML = `<div class="text-center mt-20 text-gray-400 text-xs font-bold uppercase tracking-widest">No Masājid found in ${appSettings.city}.</div>`; return; }
-            container.innerHTML = filtered.map(m => createAdminCard(m)).join('');
+            const list = getFilteredAndSortedMosques();
+            if(!list.length) { container.innerHTML = `<div class="text-center mt-20 text-gray-400 text-xs font-bold uppercase tracking-widest">No Masājid found.</div>`; return; }
+            container.innerHTML = list.map(m => createAdminCard(m)).join('');
         }
 
         function createAdminCard(m) {
             let specHTML = '';
             specialPrayersList.forEach(sp => { if(appSettings[sp.mode] === true && m.timings && m.timings[sp.id]?.time) specHTML += `<div class="flex justify-between px-2 py-1 bg-amber-50 dark:bg-amber-900/10 rounded mb-1 text-[9px] font-bold"><span class="text-amber-700">${sp.name}</span><span class="text-amber-800 dark:text-white">${window.formatTime12(m.timings[sp.id].time, sp.id)}</span></div>`; });
-            return `<div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border-l-[3px] border-r-[3px] border-l-brand-500 border-r-gray-100 dark:border-r-gray-700 mb-3 animate-card"><div class="flex justify-between items-start mb-3"><div class="cursor-pointer flex items-start gap-3" onclick="openMosqueDetail('${m.id}')"><i class="fas fa-mosque text-brand-500 mt-1"></i><div><h2 class="text-sm font-bold text-gray-800 dark:text-white leading-tight">${m.name}</h2><p class="text-[10px] text-gray-400">${m.area}</p></div></div><div class="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-1"><button onclick="window.moveMosque('${m.id}',-1)" class="w-6 h-6 rounded flex items-center justify-center text-xs text-gray-400"><i class="fas fa-chevron-up"></i></button><button onclick="window.moveMosque('${m.id}',1)" class="w-6 h-6 rounded flex items-center justify-center text-xs text-gray-400"><i class="fas fa-chevron-down"></i></button><div class="w-px h-3 bg-gray-200 dark:bg-gray-600 mx-1"></div><button onclick="window.tryAction('edit',()=>window.openMosqueModal('${m.id}'))" class="w-6 h-6 text-brand-600 rounded flex items-center justify-center"><i class="fas fa-pencil-alt text-xs"></i></button></div></div><div class="grid grid-cols-5 gap-0.5 text-center border-t border-gray-50 dark:border-gray-700 pt-3 mb-3">${prayersList.map(p => {
+            const isFav = personalLists.Favorites.includes(m.id);
+            return `<div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border-l-[3px] border-r-[3px] border-l-brand-500 border-r-gray-100 dark:border-r-gray-700 mb-3 animate-card"><div class="flex justify-between items-start mb-3"><div class="cursor-pointer flex items-start gap-3" onclick="openMosqueDetail('${m.id}')"><i class="fas fa-mosque text-brand-500 mt-1"></i><div><h2 class="text-sm font-bold text-gray-800 dark:text-white leading-tight">${m.name}</h2><p class="text-[10px] text-gray-400">${m.area}</p></div></div><div class="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-1"><button onclick="window.movePersonalOrder('${m.id}',-1)" class="w-6 h-6 rounded flex items-center justify-center text-xs text-gray-400"><i class="fas fa-chevron-up"></i></button><button onclick="window.movePersonalOrder('${m.id}',1)" class="w-6 h-6 rounded flex items-center justify-center text-xs text-gray-400"><i class="fas fa-chevron-down"></i></button><div class="w-px h-3 bg-gray-200 dark:bg-gray-600 mx-1"></div><button onclick="openPersonalListModal('${m.id}')" class="w-6 h-6 rounded flex items-center justify-center text-xs ${isFav ? 'text-brand-600' : 'text-gray-400'}"><i class="fas fa-list-ul"></i></button>${(userRole==='admin'||userRole==='volunteer') ? `<button onclick="window.openMosqueModal('${m.id}')" class="w-6 h-6 text-brand-600 rounded flex items-center justify-center ml-1"><i class="fas fa-pencil-alt text-xs"></i></button>` : ''}</div></div><div class="grid grid-cols-5 gap-0.5 text-center border-t border-gray-50 dark:border-gray-700 pt-3 mb-3">${prayersList.map(p => {
                 const t = m.timings[p.id]?.time; if(!t) return `<div onclick="window.tryAction('edit',()=>window.openEditTiming('${m.id}'))" class="opacity-30"><div class="text-[8px] font-bold text-gray-400 mb-1 flex flex-col items-center gap-0.5 uppercase"><i class="fas ${p.icon} text-[10px]"></i> ${p.name.slice(0,3)}</div>-</div>`;
                 const [h, mins] = t.split(':'); return `<div onclick="window.tryAction('edit',()=>window.openEditTiming('${m.id}'))" class="cursor-pointer py-1"><div class="text-[8px] font-bold text-brand-500/80 mb-1 flex flex-col items-center gap-0.5 uppercase"><i class="fas ${p.icon} text-[10px]"></i> ${p.name.slice(0,3)}</div><div class="font-mono text-sm font-bold dark:text-white">${parseInt(h)%12||12}:${mins}<span class="text-[7px] block">${h>=12?'PM':'AM'}</span></div></div>`;
             }).join('')}</div><div>${specHTML}</div><div class="flex border-t border-gray-100 dark:border-gray-700 pt-2"><button onclick="document.getElementById('notes_${m.id}').classList.toggle('hidden')" class="flex-1 text-[10px] font-bold text-gray-400 uppercase">Notes <i class="fas fa-chevron-down"></i></button><a href="${m.locationLink||'#'}" target="_blank" class="flex-1 text-[10px] font-bold text-brand-600 text-center uppercase">Maps <i class="fas fa-location-arrow"></i></a></div><div id="notes_${m.id}" class="hidden bg-gray-50 dark:bg-gray-700/30 p-3 text-[10px] border-t mt-2 dark:text-gray-300">${m.address||'No notes.'}</div></div>`;
@@ -495,19 +600,28 @@
         }
 
         async function init() {
+            loadUserData();
             appSettings.theme = localStorage.getItem('theme') || 'light';
             appSettings.city = localStorage.getItem('city') || 'Hyderabad';
             document.documentElement.classList.toggle('dark', appSettings.theme === 'dark');
             const toggEl = document.getElementById('theme_toggle'); if(toggEl) toggEl.checked = appSettings.theme === 'dark';
             const cityEl = document.getElementById('headerCityName'); if(cityEl) cityEl.innerText = appSettings.city.toUpperCase();
+            
             auth.onAuthStateChanged(async (user) => {
                 currentUser = user;
                 if (user) {
                     document.getElementById('loginSection').classList.add('hidden'); document.getElementById('authSection').classList.remove('hidden');
                     document.getElementById('userPhoto').src = user.photoURL; document.getElementById('userName').innerText = user.displayName;
                     const doc = await db.collection('users').doc(user.uid).get();
-                    userRole = doc.exists ? doc.data().role : 'user';
-                    if(!doc.exists) await db.collection('users').doc(user.uid).set({ email: user.email, name: user.displayName, role: 'user', createdAt: new Date().toISOString() });
+                    if (doc.exists) {
+                        const data = doc.data();
+                        userRole = data.role || 'user';
+                        if (data.personalLists) personalLists = data.personalLists;
+                        if (data.customOrder) customOrder = data.customOrder;
+                    } else {
+                        userRole = 'user';
+                        await db.collection('users').doc(user.uid).set({ email: user.email, name: user.displayName, role: 'user', personalLists, customOrder, createdAt: new Date().toISOString() });
+                    }
                     document.getElementById('userRoleBadge').innerText = userRole;
                 } else {
                     document.getElementById('loginSection').classList.remove('hidden'); document.getElementById('authSection').classList.add('hidden');
