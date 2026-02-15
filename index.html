@@ -7,7 +7,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@700&family=Google+Sans+Code:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@700&family=Source+Code+Pro:wght@600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -25,7 +25,7 @@
                     fontFamily: {
                         sans: ['Montserrat', 'sans-serif'],
                         serif: ['Playfair Display', 'serif'],
-                        mono: ['Google Sans Code', 'monospace'],
+                        mono: ['Source Code Pro', 'monospace'],
                     },
                     colors: {
                         brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' }
@@ -72,11 +72,11 @@
             <div>
                 <h3 class="text-[10px] font-bold uppercase text-gray-400 mb-4 tracking-wider">Seasonal Visibility</h3>
                 <div class="space-y-4 text-sm font-medium">
-                    <div class="flex justify-between items-center"><span>Ramadan</span><input type="checkbox" id="mode_ramadan" onchange="toggleMode('ramadan')" class="accent-brand-600 w-4 h-4"></div>
-                    <div class="flex justify-between items-center"><span>Eid-ul-Fitr</span><input type="checkbox" id="mode_eidFitr" onchange="toggleMode('eidFitr')" class="accent-brand-600 w-4 h-4"></div>
-                    <div class="flex justify-between items-center"><span>Eid-ul-Adha</span><input type="checkbox" id="mode_eidAdha" onchange="toggleMode('eidAdha')" class="accent-brand-600 w-4 h-4"></div>
-                    <div class="flex justify-between items-center"><span>Qiyam-ul-Layl</span><input type="checkbox" id="mode_qiyam" onchange="toggleMode('qiyam')" class="accent-brand-600 w-4 h-4"></div>
-                    <div class="flex justify-between items-center"><span>Late Isha</span><input type="checkbox" id="mode_lateIsha" onchange="toggleMode('lateIsha')" class="accent-brand-600 w-4 h-4"></div>
+                    <div class="flex justify-between items-center"><span>Ramaḍān</span><input type="checkbox" id="mode_ramadan" onchange="toggleMode('ramadan')" class="accent-brand-600 w-4 h-4"></div>
+                    <div class="flex justify-between items-center"><span>Eid-ul-Fiṭr</span><input type="checkbox" id="mode_eidFitr" onchange="toggleMode('eidFitr')" class="accent-brand-600 w-4 h-4"></div>
+                    <div class="flex justify-between items-center"><span>Eid-ul-Aḍḥā</span><input type="checkbox" id="mode_eidAdha" onchange="toggleMode('eidAdha')" class="accent-brand-600 w-4 h-4"></div>
+                    <div class="flex justify-between items-center"><span>Qiyām-ul-Layl</span><input type="checkbox" id="mode_qiyam" onchange="toggleMode('qiyam')" class="accent-brand-600 w-4 h-4"></div>
+                    <div class="flex justify-between items-center"><span>Late Ishā</span><input type="checkbox" id="mode_lateIsha" onchange="toggleMode('lateIsha')" class="accent-brand-600 w-4 h-4"></div>
                 </div>
             </div>
 
@@ -136,12 +136,12 @@
         </button>
         <button onclick="setViewMode('list')" class="nav-btn w-16 group flex flex-col items-center justify-center" id="nav_list">
             <i class="fas fa-mosque text-lg mb-1"></i>
-            <span class="text-[10px] font-bold">Mosques</span>
+            <span class="text-[10px] font-bold">Masājid</span>
         </button>
     </div>
 
     <div id="mosqueDetailModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-sm max-h-[85vh] shadow-2xl flex flex-col animate-card overflow-hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm max-h-[85vh] shadow-2xl flex flex-col animate-card overflow-hidden">
             <div class="p-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/20 flex justify-between items-start">
                 <div class="flex items-start gap-3">
                     <i class="fas fa-mosque text-brand-600 dark:text-brand-400 text-xl mt-1"></i>
@@ -171,8 +171,8 @@
     <div id="mosqueInfoModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-card max-h-[90vh] overflow-y-auto no-scrollbar relative">
             <div class="flex justify-between items-center mb-5">
-                <h3 class="text-lg font-serif font-bold dark:text-white" id="mosqueModalTitle">Add Mosque</h3>
-                <button id="btnDeleteMosqueHeader" onclick="deleteMosque()" class="text-red-500 hover:text-red-700 p-2 rounded-lg bg-red-50 dark:bg-red-900/20 flex transition-colors" title="Delete Mosque">
+                <h3 class="text-lg font-serif font-bold dark:text-white" id="mosqueModalTitle">Add Masjid</h3>
+                <button id="btnDeleteMosqueHeader" onclick="deleteMosque()" class="text-red-500 hover:text-red-700 p-2 rounded-lg bg-red-50 dark:bg-red-900/20 flex transition-colors" title="Delete Masjid">
                     <i class="fas fa-trash-alt text-lg"></i>
                 </button>
             </div>
@@ -206,9 +206,12 @@
                 </div>
             </div>
             
-            <div class="mt-6 flex justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-700">
-                <button onclick="closeModal('mosqueInfoModal')" class="px-5 py-2.5 text-xs font-bold text-gray-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">CANCEL</button>
-                <button onclick="saveMosqueInfo()" class="px-6 py-2.5 text-xs font-bold bg-brand-600 text-white rounded-lg shadow-lg hover:bg-brand-700">SAVE</button>
+            <div class="mt-6 flex flex-col gap-2 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button onclick="saveMosqueInfo(true)" class="w-full py-2.5 bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 border border-brand-100 dark:border-brand-900/50 rounded-xl text-xs font-bold hover:bg-brand-100 transition-colors">SAVE & EDIT TIMINGS</button>
+                <div class="flex justify-end gap-2">
+                    <button onclick="closeModal('mosqueInfoModal')" class="px-5 py-2.5 text-xs font-bold text-gray-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 uppercase">Cancel</button>
+                    <button onclick="saveMosqueInfo()" class="px-6 py-2.5 text-xs font-bold bg-brand-600 text-white rounded-lg shadow-lg hover:bg-brand-700 uppercase">Save</button>
+                </div>
             </div>
         </div>
     </div>
@@ -235,9 +238,9 @@
         let editingTimingsId = null, currentDetailId = null, currentTimeDisplay = '', currentTargetPrayer = 'fajr';
         let appSettings = { ramadan: false, eidFitr: false, eidAdha: false, qiyam: false, lateIsha: false, theme: 'light' };
         
-        const prayersList = [ { id: 'fajr', name: 'Fajr', icon: 'fa-cloud-sun' }, { id: 'zuhr', name: 'Zuhr', icon: 'fa-sun' }, { id: 'asr', name: 'Asr', icon: 'fa-cloud' }, { id: 'isha', name: 'Isha', icon: 'fa-moon' }, { id: 'jumma', name: 'Jumma', icon: 'fa-users' } ];
+        const prayersList = [ { id: 'fajr', name: 'Fajr', icon: 'fa-cloud-sun' }, { id: 'zuhr', name: 'Ẓuhr', icon: 'fa-sun' }, { id: 'asr', name: 'Aṣr', icon: 'fa-cloud' }, { id: 'isha', name: 'Ishā', icon: 'fa-moon' }, { id: 'jumma', name: 'Jumma', icon: 'fa-users' } ];
         const sequenceOrder = ['fajr', 'zuhr', 'asr', 'isha']; 
-        const specialPrayersList = [ { id: 'taraweeh', name: 'Taraweeh', type: 'parahs', mode: 'ramadan' }, { id: 'eidFitr', name: 'Eid-ul-Fitr Prayer', mode: 'eidFitr' }, { id: 'eidAdha', name: 'Eid-ul-Adha Prayer', mode: 'eidAdha' }, { id: 'qiyam', name: 'Qiyam-ul-Layl', mode: 'qiyam' }, { id: 'lateIsha', name: 'Late Isha', mode: 'lateIsha' } ];
+        const specialPrayersList = [ { id: 'taraweeh', name: 'Tarāweeḥ', type: 'parahs', mode: 'ramadan' }, { id: 'eidFitr', name: 'Eid-ul-Fiṭr Prayer', mode: 'eidFitr' }, { id: 'eidAdha', name: 'Eid-ul-Aḍḥā Prayer', mode: 'eidAdha' }, { id: 'qiyam', name: 'Qiyām-ul-Layl', mode: 'qiyam' }, { id: 'lateIsha', name: 'Late Ishā', mode: 'lateIsha' } ];
 
         const firebaseConfig = { apiKey: "AIzaSyAEzXz42Zih7M6yY97_4e8_E1BNsjbJhnI", authDomain: "timings-ak.firebaseapp.com", projectId: "timings-ak", storageBucket: "timings-ak.firebasestorage.app", messagingSenderId: "1082790063422", appId: "1:1082790063422:web:be439e3d932475a9fe906f" };
         firebase.initializeApp(firebaseConfig);
@@ -262,8 +265,9 @@
             document.getElementById('detail_timings').innerHTML = displayOrder.map(pid => { 
                 const data = m.timings[pid]; 
                 const hasTime = data && data.time;
-                const name = prayersList.find(p => p.id === pid)?.name || pid; 
-                const icon = prayersList.find(p => p.id === pid)?.icon || 'fa-clock'; 
+                const pObj = prayersList.find(p => p.id === pid);
+                const name = pObj?.name || pid; 
+                const icon = pObj?.icon || 'fa-clock'; 
                 const dateStamp = (!data?.fixed && data?.lastUpdated) ? `<div class="text-[8px] text-gray-300 mt-0.5">${formatUpdateDate(data.lastUpdated)}</div>` : ''; 
                 
                 return `
@@ -342,7 +346,7 @@
         function openMosqueModal(id = null) { 
             document.getElementById('mosqueInfoModal').classList.remove('hidden'); 
             const isEdit = id !== null; 
-            document.getElementById('mosqueModalTitle').innerText = isEdit ? 'Edit Mosque' : 'Add Mosque'; 
+            document.getElementById('mosqueModalTitle').innerText = isEdit ? 'Edit Masjid' : 'Add Masjid'; 
             document.getElementById('editMosqueId').value = id || ''; 
             const delBtn = document.getElementById('btnDeleteMosqueHeader'); 
             if(isEdit) delBtn.style.display = 'flex'; else delBtn.style.display = 'none';
@@ -368,7 +372,7 @@
             } 
         }
 
-        async function saveMosqueInfo() { 
+        async function saveMosqueInfo(goToTimings = false) { 
             const id = document.getElementById('editMosqueId').value; 
             const name = document.getElementById('m_name').value; 
             const chips = document.querySelectorAll('#listChipsContainer .list-btn.active');
@@ -378,16 +382,19 @@
             if(selected.length === 0) selected.push('Favorites');
             if (!name) return alert("Enter Name"); 
             const data = { name, area: document.getElementById('m_area').value||'', lists: selected, locationLink: document.getElementById('m_link').value, address: document.getElementById('m_notes').value }; 
-            closeModal('mosqueInfoModal'); 
+            
             try { 
+                let savedId = id;
                 if(id) { await db.collection('mosques').doc(id).update(data); } 
                 else { 
                     data.order = -Date.now(); 
                     data.timings = { fajr: {time:'05:30', fixed:false}, zuhr: {time:'13:15', fixed:true}, asr: {time:'16:45', fixed:false}, isha: {time:'20:15', fixed:false}, jumma: {time:'13:30', fixed:true} }; 
                     const docRef = await db.collection('mosques').add(data);
-                    setTimeout(() => openEditTiming(docRef.id), 500); 
+                    savedId = docRef.id;
                 } 
                 showToast(); 
+                closeModal('mosqueInfoModal'); 
+                if(goToTimings) openEditTiming(savedId);
             } catch(e){console.error(e);} 
         }
 
@@ -407,6 +414,9 @@
 
         function getTimeRemaining(timeStr, pid = null) {
             if(!timeStr) return '';
+            // Eid prayers do not have a countdown/passed status
+            if(pid === 'eidFitr' || pid === 'eidAdha') return '';
+
             const now = new Date(); const [h, m] = timeStr.split(':').map(Number);
             const target = new Date(); target.setHours(h, m, 0, 0);
             
@@ -456,17 +466,14 @@
                 html += `<div class="mt-6 mb-2 flex items-center gap-2 px-1"><i class="fas fa-star text-xs text-amber-500"></i><h3 class="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">${eidObj.name}</h3></div><div class="space-y-1">`;
                 html += list.map(m => {
                     const t = m.timings[eidKey]; const [h, mns] = t.time.split(':').map(Number); const numTime = `${h%12||12}:${String(mns).padStart(2,'0')}`; const suff = h>=12 ? 'PM' : 'AM';
-                    const remainingText = getTimeRemaining(t.time, eidKey);
-                    const passed = remainingText === '(Time Passed)';
                     return `
-                    <div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] border-amber-500 cursor-pointer active:scale-[0.98] transition-all animate-card ${passed ? 'opacity-40 grayscale' : ''}">
+                    <div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] border-amber-500 cursor-pointer active:scale-[0.98] transition-all animate-card">
                         <div class="flex-1 min-w-0 mr-4 flex items-center gap-2">
-                            <i class="fas fa-mosque text-[10px] ${passed ? 'text-gray-400' : 'text-amber-400'}"></i>
-                            <div class="min-w-0"><h4 class="font-bold ${passed ? 'text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-white'} text-sm truncate">${m.name}</h4><p class="text-[9px] text-gray-400 truncate mt-0.5">${m.area}</p></div>
+                            <i class="fas fa-mosque text-[10px] text-amber-400"></i>
+                            <div class="min-w-0"><h4 class="font-bold text-gray-800 dark:text-white text-sm truncate">${m.name}</h4><p class="text-[9px] text-gray-400 truncate mt-0.5">${m.area}</p></div>
                         </div>
                         <div class="text-right flex flex-col items-end">
-                            <div class="whitespace-nowrap"><span class="font-mono text-lg font-bold ${passed ? 'text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-white'} tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>
-                            <div class="text-[9px] font-bold ${passed ? 'text-gray-400' : 'text-amber-600 bg-amber-50'} px-2 py-0.5 rounded mt-1 inline-block">${remainingText}</div>
+                            <div class="whitespace-nowrap"><span class="font-mono text-lg font-bold text-gray-800 dark:text-white tracking-tight">${numTime}</span><span class="text-[9px] text-gray-400 font-bold ml-0.5">${suff}</span></div>
                         </div>
                     </div>`;
                 }).join(''); html += `</div>`;
@@ -558,8 +565,8 @@
 
         function formatTime12(time24, pid = null) { 
             if (!time24 || time24.trim() === '') return '--:--'; 
-            if (pid === 'taraweeh') return `${time24} <span class="text-[9px] uppercase font-sans font-bold text-gray-400">Parahs</span>`;
-            if (time24.includes('.') && !pid) return `${time24} <span class="text-[9px]">Parahs</span>`; 
+            if (pid === 'taraweeh') return `${time24} <span class="text-[9px] uppercase font-sans font-bold text-gray-400">Pārahs</span>`;
+            if (time24.includes('.') && !pid) return `${time24} <span class="text-[9px]">Pārahs</span>`; 
             const [h, m] = time24.split(':'); let hours = parseInt(h); const suffix = hours >= 12 ? 'PM' : 'AM'; hours = hours % 12 || 12; return `${hours}:${m}<span class="text-[10px] ml-0.5 font-normal text-gray-400">${suffix}</span>`; 
         }
 
@@ -580,10 +587,10 @@
         async function toggleMode(key) { appSettings[key] = !appSettings[key]; await db.collection('settings').doc('global_modes').update(appSettings); }
         function updateSidebarToggles() { document.getElementById('mode_ramadan').checked = appSettings.ramadan; document.getElementById('mode_eidFitr').checked = appSettings.eidFitr; document.getElementById('mode_eidAdha').checked = appSettings.eidAdha; document.getElementById('mode_qiyam').checked = appSettings.qiyam; document.getElementById('mode_lateIsha').checked = appSettings.lateIsha; }
         async function moveMosque(id, dir) { const idx = mosques.findIndex(m => m.id === id); if (idx === -1) return; const targetIdx = idx + dir; if (targetIdx < 0 || targetIdx >= mosques.length) return; const m1 = mosques[idx], m2 = mosques[targetIdx]; let o1 = m1.order||0, o2 = m2.order||0; m1.order=o2; m2.order=o1; mosques.sort((a,b)=>a.order-b.order); renderApp(); const b = db.batch(); b.update(db.collection('mosques').doc(m1.id),{order:m1.order}); b.update(db.collection('mosques').doc(m2.id),{order:m2.order}); await b.commit(); }
-        async function deleteMosque() { const id = document.getElementById('editMosqueId').value; if(confirm("Delete this mosque?")) { closeModal('mosqueInfoModal'); await db.collection('mosques').doc(id).delete(); showToast(); } }
+        async function deleteMosque() { const id = document.getElementById('editMosqueId').value; if(confirm("Delete this masjid?")) { closeModal('mosqueInfoModal'); await db.collection('mosques').doc(id).delete(); showToast(); } }
         async function saveTimings() { const m = mosques.find(x => x.id === editingTimingsId); if (!m) return; let updated = {...m.timings}; const nowStr = new Date().toISOString(); prayersList.forEach(p => { const el = document.getElementById(`input_${p.id}`); const fix = document.getElementById(`fix_${p.id}`); if(el) updated[p.id] = { time: el.value, fixed: fix.checked, lastUpdated: nowStr }; }); specialPrayersList.forEach(sp => { const el = document.getElementById(`input_${sp.id}`); if(el) updated[sp.id] = { time: el.value }; }); closeModal('editTimingModal'); m.timings = updated; renderApp(); await db.collection('mosques').doc(editingTimingsId).update({timings: updated}); showToast(); }
         function openEditTiming(id) { editingTimingsId = id; const m = mosques.find(x => x.id === id); document.getElementById('timingModalMosqueName').innerText = m.name; document.getElementById('timingEditorContainer').innerHTML = prayersList.map(p => createTimeRow(p.id, p.name, m.timings[p.id])).join(''); document.getElementById('specialPrayersContainer').innerHTML = specialPrayersList.map(sp => createTimeRow(sp.id, sp.name, m.timings[sp.id] || {time:''}, true, sp.id === 'taraweeh' ? 'parahs' : 'time')).join(''); document.getElementById('specialPrayersContainer').classList.add('hidden'); document.getElementById('specialChevron').classList.remove('rotate-180'); document.getElementById('editTimingModal').classList.remove('hidden'); }
-        function createTimeRow(key, name, data, isSpecial = false, type = 'time') { const timeVal = data?.time || ''; const isFixed = data?.fixed || false; if (type === 'parahs') return `<div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 pb-3 mb-3 last:border-0"><div class="flex items-center gap-3 mb-2"><span class="font-bold text-xs w-16 text-gray-500 uppercase tracking-wide">${name}</span><input type="number" step="0.25" id="input_${key}" value="${timeVal}" placeholder="1.25" class="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-center font-mono text-base font-bold text-gray-800 dark:text-white outline-none focus:border-brand-500"><button onclick="clearTimeInput('${key}')" class="text-gray-400 hover:text-red-500 w-8 h-8"><i class="fas fa-trash text-xs"></i></button></div></div>`; return `<div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 pb-3 mb-3 last:border-0 last:mb-0"><div class="flex items-center gap-3 mb-2"><span class="font-bold text-sm text-gray-700 dark:text-gray-300 w-20">${name}</span><div class="flex-1 relative h-10"><div id="display_${key}" class="absolute inset-0 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl flex items-center justify-center font-mono text-base font-bold text-gray-800 dark:text-white pointer-events-none transition-colors">${formatTime12(timeVal, key)}</div><input type="time" id="input_${key}" value="${timeVal}" onchange="updateDisplayLayer('${key}')" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"></div><button onclick="clearTimeInput('${key}')" class="text-gray-400 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"><i class="fas fa-trash text-xs"></i></button></div><div class="flex justify-between items-center pl-[5.5rem] pr-12">${!isSpecial ? `<label class="flex items-center gap-2 cursor-pointer group"><input type="checkbox" id="fix_${key}" ${isFixed ? 'checked' : ''} class="w-4 h-4 accent-brand-600 rounded cursor-pointer"><span class="text-[10px] uppercase font-bold text-gray-400 group-hover:text-brand-600 transition-colors">Same all year</span></label>` : '<div></div>'}<div class="flex gap-2"><button onclick="adjustTime('${key}', -5)" class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-brand-100 dark:hover:bg-brand-900 rounded-md text-[10px] font-bold text-gray-600 dark:text-gray-300 transition-colors">- 5</button><button onclick="adjustTime('${key}', 5)" class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-brand-100 dark:hover:bg-brand-900 rounded-md text-[10px] font-bold text-gray-600 dark:text-gray-300 transition-colors">+ 5</button></div></div></div>`; }
+        function createTimeRow(key, name, data, isSpecial = false, type = 'time') { const timeVal = data?.time || ''; const isFixed = data?.fixed || false; if (type === 'parahs') return `<div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 pb-3 mb-3 last:border-0"><div class="flex items-center gap-3 mb-2"><span class="font-bold text-xs w-16 text-gray-500 uppercase tracking-wide">${name}<br><span class="text-[8px] text-gray-400 font-normal">(in Pārahs)</span></span><input type="number" step="0.25" id="input_${key}" value="${timeVal}" placeholder="1.25" class="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-center font-mono text-base font-bold text-gray-800 dark:text-white outline-none focus:border-brand-500"><button onclick="clearTimeInput('${key}')" class="text-gray-400 hover:text-red-500 w-8 h-8"><i class="fas fa-trash text-xs"></i></button></div></div>`; return `<div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 pb-3 mb-3 last:border-0 last:mb-0"><div class="flex items-center gap-3 mb-2"><span class="font-bold text-sm text-gray-700 dark:text-gray-300 w-20">${name}</span><div class="flex-1 relative h-10"><div id="display_${key}" class="absolute inset-0 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl flex items-center justify-center font-mono text-base font-bold text-gray-800 dark:text-white pointer-events-none transition-colors">${formatTime12(timeVal, key)}</div><input type="time" id="input_${key}" value="${timeVal}" onchange="updateDisplayLayer('${key}')" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"></div><button onclick="clearTimeInput('${key}')" class="text-gray-400 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"><i class="fas fa-trash text-xs"></i></button></div><div class="flex justify-between items-center pl-[5.5rem] pr-12">${!isSpecial ? `<label class="flex items-center gap-2 cursor-pointer group"><input type="checkbox" id="fix_${key}" ${isFixed ? 'checked' : ''} class="w-4 h-4 accent-brand-600 rounded cursor-pointer"><span class="text-[10px] uppercase font-bold text-gray-400 group-hover:text-brand-600 transition-colors">Same all year</span></label>` : '<div></div>'}<div class="flex gap-2"><button onclick="adjustTime('${key}', -5)" class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-brand-100 dark:hover:bg-brand-900 rounded-md text-[10px] font-bold text-gray-600 dark:text-gray-300 transition-colors">- 5</button><button onclick="adjustTime('${key}', 5)" class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-brand-100 dark:hover:bg-brand-900 rounded-md text-[10px] font-bold text-gray-600 dark:text-gray-300 transition-colors">+ 5</button></div></div></div>`; }
         function updateDisplayLayer(key) { const input = document.getElementById(`input_${key}`); const display = document.getElementById(`display_${key}`); if (input && display) display.innerHTML = input.value ? formatTime12(input.value, key) : '--:--'; }
         function clearTimeInput(key) { document.getElementById(`input_${key}`).value = ''; updateDisplayLayer(key); }
         function adjustTime(key, mins) { const input = document.getElementById(`input_${key}`); if (!input.value) return; const [h, m] = input.value.split(':').map(Number); const date = new Date(); date.setHours(h); date.setMinutes(m + mins); const newH = String(date.getHours()).padStart(2, '0'); const newM = String(date.getMinutes()).padStart(2, '0'); input.value = `${newH}:${newM}`; updateDisplayLayer(key); }
