@@ -331,7 +331,7 @@
             if(localTheme === 'dark') document.documentElement.classList.add('dark');
             else document.documentElement.classList.remove('dark');
             document.getElementById('theme_toggle').checked = localTheme === 'dark';
-            document.getElementById('headerCityName').innerText = appSettings.city;
+            document.getElementById('headerCityName').innerText = appSettings.city.toUpperCase();
 
             db.collection('settings').doc('global_modes').onSnapshot(doc => {
                 if(doc.exists) {
@@ -339,6 +339,15 @@
                     Object.keys(appSettings).forEach(k => { if(k !== 'theme' && k !== 'city' && data[k] !== undefined) appSettings[k] = data[k]; });
                     updateSidebarToggles();
                     renderApp();
+                }
+            });
+            // New Listener for Cities
+            db.collection('settings').doc('locations').onSnapshot(doc => {
+                if(doc.exists) {
+                    const data = doc.data();
+                    if(data.cities && Array.isArray(data.cities)) {
+                        data.cities.forEach(c => availableCities.add(c));
+                    }
                 }
             });
         }
@@ -349,7 +358,7 @@
                 else {
                     mosques = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     allLists = new Set(['Favorites', 'Home', 'Work']);
-                    availableCities = new Set(['Hyderabad']);
+                    // Note: We deliberately do NOT reset availableCities here to preserve cloud data
                     
                     mosques.forEach(m => {
                         if(!m.timings) m.timings={}; 
@@ -588,6 +597,12 @@
             const val = input.value.trim();
             if(val) {
                 const formatted = val.replace(/\w\S*/g, (w) => (w.replace(/^\w/, (c) => c.toUpperCase())));
+                
+                // Update Cloud
+                db.collection('settings').doc('locations').set({
+                    cities: firebase.firestore.FieldValue.arrayUnion(formatted)
+                }, { merge: true });
+
                 availableCities.add(formatted);
                 selectCity(formatted);
                 input.value = '';
