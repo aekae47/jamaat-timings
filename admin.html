@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jamaat Admin Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+    <script>
+        // CONFIG MUST MATCH MAIN APP
+        const firebaseConfig = { apiKey: "AIzaSyAEzXz42Zih7M6yY97_4e8_E1BNsjbJhnI", authDomain: "timings-ak.firebaseapp.com", projectId: "timings-ak", storageBucket: "timings-ak.firebasestorage.app", messagingSenderId: "1082790063422", appId: "1:1082790063422:web:be439e3d932475a9fe906f" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const provider = new firebase.auth.GoogleAuthProvider();
+    </script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
+
+    <div class="max-w-4xl mx-auto p-6">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-teal-700">Jamaat Admin</h1>
+                <p class="text-sm text-gray-500">Manage volunteers and users</p>
+            </div>
+            <div id="authContainer">
+                <button onclick="auth.signInWithPopup(provider)" class="bg-teal-600 text-white px-4 py-2 rounded shadow hover:bg-teal-700">Login</button>
+            </div>
+        </div>
+
+        <div id="mainContent" class="hidden">
+            <div class="grid grid-cols-3 gap-4 mb-8">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                    <h3 class="text-xs font-bold uppercase text-gray-400">Total Users</h3>
+                    <p class="text-2xl font-bold" id="statUsers">-</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                    <h3 class="text-xs font-bold uppercase text-gray-400">Volunteers</h3>
+                    <p class="text-2xl font-bold text-teal-600" id="statVols">-</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                    <h3 class="text-xs font-bold uppercase text-gray-400">Total Mosques</h3>
+                    <p class="text-2xl font-bold" id="statMosques">-</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th class="p-4 font-bold text-gray-500">User</th>
+                            <th class="p-4 font-bold text-gray-500">Role</th>
+                            <th class="p-4 font-bold text-gray-500 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody" class="divide-y divide-gray-100">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="unauthorizedMsg" class="hidden text-center mt-20 text-gray-400">
+            <i class="fas fa-lock text-4xl mb-4"></i>
+            <p>You are not authorized to view this page.</p>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        auth.onAuthStateChanged(async (user) => {
+            currentUser = user;
+            if (user) {
+                // Check if admin
+                const doc = await db.collection('users').doc(user.uid).get();
+                const role = doc.exists ? doc.data().role : 'user';
+                
+                if (role === 'admin') {
+                    document.getElementById('mainContent').classList.remove('hidden');
+                    document.getElementById('authContainer').innerHTML = `<button onclick="auth.signOut()" class="text-sm font-bold text-red-500">Logout</button>`;
+                    loadDashboard();
+                } else {
+                    document.getElementById('unauthorizedMsg').classList.remove('hidden');
+                    document.getElementById('authContainer').innerHTML = `<button onclick="auth.signOut()" class="text-sm font-bold text-red-500">Logout</button>`;
+                }
+            } else {
+                document.getElementById('mainContent').classList.add('hidden');
+                document.getElementById('unauthorizedMsg').classList.add('hidden');
+                document.getElementById('authContainer').innerHTML = `<button onclick="auth.signInWithPopup(provider)" class="bg-teal-600 text-white px-4 py-2 rounded shadow hover:bg-teal-700">Login</button>`;
+            }
+        });
+
+        async function loadDashboard() {
+            // Stats
+            const mSnaps = await db.collection('mosques').get();
+            document.getElementById('statMosques').innerText = mSnaps.size;
+
+            db.collection('users').onSnapshot(snap => {
+                const users = [];
+                snap.forEach(doc => users.push({id: doc.id, ...doc.data()}));
+                
+                document.getElementById('statUsers').innerText = users.length;
+                document.getElementById('statVols').innerText = users.filter(u => u.role === 'volunteer').length;
+
+                const tbody = document.getElementById('userTableBody');
+                tbody.innerHTML = users.map(u => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-4">
+                            <div class="font-bold">${u.name || 'Unknown'}</div>
+                            <div class="text-xs text-gray-400">${u.email}</div>
+                        </td>
+                        <td class="p-4">
+                            <span class="px-2 py-1 rounded text-xs font-bold uppercase ${
+                                u.role === 'admin' ? 'bg-purple-100 text-purple-600' : 
+                                u.role === 'volunteer' ? 'bg-teal-100 text-teal-600' : 'bg-gray-100 text-gray-500'
+                            }">${u.role || 'user'}</span>
+                        </td>
+                        <td class="p-4 text-right">
+                            <select onchange="updateRole('${u.id}', this.value)" class="bg-white border border-gray-300 text-xs rounded px-2 py-1 outline-none">
+                                <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
+                                <option value="volunteer" ${u.role === 'volunteer' ? 'selected' : ''}>Volunteer</option>
+                                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+                            </select>
+                        </td>
+                    </tr>
+                `).join('');
+            });
+        }
+
+        async function updateRole(uid, newRole) {
+            if(confirm(`Change role to ${newRole}?`)) {
+                await db.collection('users').doc(uid).update({ role: newRole });
+            }
+        }
+    </script>
+</body>
+</html>
