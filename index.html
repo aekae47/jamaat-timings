@@ -22,14 +22,8 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Montserrat', 'sans-serif'],
-                        serif: ['Playfair Display', 'serif'],
-                        mono: ['Source Code Pro', 'monospace'],
-                    },
-                    colors: {
-                        brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' }
-                    }
+                    fontFamily: { sans: ['Montserrat', 'sans-serif'], serif: ['Playfair Display', 'serif'], mono: ['Source Code Pro', 'monospace'] },
+                    colors: { brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' } }
                 }
             }
         }
@@ -40,12 +34,10 @@
         body { -webkit-tap-highlight-color: transparent; }
         .animate-card { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
         .toggle-checkbox:checked { right: 0; border-color: #0d9488; }
         .toggle-checkbox:checked + .toggle-label { background-color: #0d9488; }
         .toggle-label { width: 36px; height: 20px; background-color: #e5e7eb; transition: 0.2s; }
         .toggle-checkbox { right: 16px; transition: 0.2s; width: 16px; height: 16px; top: 2px; }
-        
         .list-btn { padding: 0.375rem 0.75rem; border-radius: 9999px; border: 1px solid #e5e7eb; font-size: 10px; font-weight: 700; color: #6b7280; cursor: pointer; transition: all 0.2s; background-color: white; }
         .dark .list-btn { background-color: #1f2937; border-color: #374151; color: #9ca3af; }
         .list-btn.active { background-color: #0d9488; color: white; border-color: #0d9488; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
@@ -56,7 +48,6 @@
 
     <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-[60] hidden transition-opacity backdrop-blur-sm"></div>
     <div id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-white dark:bg-gray-800 shadow-2xl z-[70] transform -translate-x-full transition-transform duration-300 ease-in-out p-6 flex flex-col">
-        
         <div class="mb-6 pb-6 border-b border-gray-100 dark:border-gray-700">
             <div id="authSection" class="hidden">
                 <div class="flex items-center gap-3 mb-3">
@@ -105,7 +96,7 @@
         </div>
     </div>
 
-    <div class="fixed top-0 w-full z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-gray-700 transition-all duration-300 h-[155px]" id="mainHeader">
+    <div class="fixed top-0 w-full z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-gray-700 h-[155px]" id="mainHeader">
         <div class="flex flex-col items-center justify-center pt-2 pb-1 relative h-[50px]">
             <button onclick="toggleSidebar()" class="absolute left-3 top-2.5 text-gray-500 hover:text-brand-600 w-8 h-8 flex items-center justify-center rounded-full transition-colors"><i class="fas fa-bars text-lg"></i></button>
             <h1 class="text-lg font-serif font-bold text-brand-600 dark:text-brand-400 tracking-tight">Jamaat on Time</h1>
@@ -138,7 +129,7 @@
     <div class="pt-[160px] pb-24 max-w-md mx-auto min-h-screen px-3" id="mainContainer">
         <div class="text-center mt-32 text-gray-400 flex flex-col items-center">
             <i class="fas fa-circle-notch fa-spin text-2xl mb-3 text-brand-300"></i>
-            <p class="text-xs font-bold uppercase tracking-widest opacity-50">Loading Masājid...</p>
+            <p class="text-xs font-bold uppercase tracking-widest opacity-50">Starting...</p>
         </div>
     </div>
 
@@ -158,7 +149,7 @@
     <div id="accessDeniedModal" class="hidden fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 text-center">
         <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-xs p-6 shadow-2xl animate-card">
             <div class="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fas fa-lock"></i></div>
-            <h3 class="text-lg font-serif font-bold mb-2">Restricted Access</h3>
+            <h3 class="text-lg font-serif font-bold mb-2 text-gray-800">Restricted Access</h3>
             <p class="text-xs text-gray-500 mb-6">Only admins and volunteers can edit these details. Apply at our <a href="https://t.me/+cjZjOMlnINUxMmU1" target="_blank" class="text-brand-600 underline font-bold">Telegram group</a></p>
             <button onclick="closeModal('accessDeniedModal')" class="w-full py-3 bg-gray-100 rounded-xl text-xs font-bold uppercase">Close</button>
         </div>
@@ -220,7 +211,7 @@
                 <div><label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Location Instructions</label><textarea id="m_notes" rows="2" class="input-field text-xs" placeholder="Notes..."></textarea></div>
             </div>
             <div class="mt-6 flex flex-col gap-2 pt-4 border-t border-gray-100 dark:border-gray-700">
-                <button onclick="tryAction('edit', () => saveMosqueInfo(true))" class="w-full py-2.5 bg-brand-50 dark:bg-brand-900/30 text-brand-600 rounded-xl text-xs font-bold hover:bg-brand-100 transition-colors uppercase">Save & Edit Timings</button>
+                <button onclick="tryAction('edit', () => saveMosqueInfo(true))" class="w-full py-2.5 bg-brand-50 dark:bg-brand-900/30 text-brand-600 rounded-xl text-xs font-bold hover:bg-brand-100 transition-colors uppercase font-sans">Save & Edit Timings</button>
                 <div class="flex justify-end gap-2">
                     <button onclick="closeModal('mosqueInfoModal')" class="px-5 py-2.5 text-xs font-bold text-gray-500 rounded-lg hover:bg-gray-100 uppercase">Cancel</button>
                     <button onclick="tryAction('edit', () => saveMosqueInfo())" class="px-6 py-2.5 text-xs font-bold bg-brand-600 text-white rounded-lg shadow-lg hover:bg-brand-700 uppercase">Save</button>
@@ -247,7 +238,14 @@
     <div id="toast" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-2xl opacity-0 transition-all duration-300 z-50 pointer-events-none translate-y-4"><i class="fas fa-check-circle text-brand-400 mr-2"></i><span>Saved</span></div>
 
     <script>
-        // --- GLOBAL UI HELPERS ---
+        // --- DEFINE GLOBALS IMMEDIATELY ---
+        window.updateSidebarToggles = () => {
+            const elR = document.getElementById('mode_ramadan'); if(elR) elR.checked = appSettings.ramadan;
+            const elF = document.getElementById('mode_eidFitr'); if(elF) elF.checked = appSettings.eidFitr;
+            const elA = document.getElementById('mode_eidAdha'); if(elA) elA.checked = appSettings.eidAdha;
+            const elQ = document.getElementById('mode_qiyam'); if(elQ) elQ.checked = appSettings.qiyam;
+            const elL = document.getElementById('mode_lateIsha'); if(elL) elL.checked = appSettings.lateIsha;
+        };
         window.closeModal = (id) => document.getElementById(id)?.classList.add('hidden');
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('sidebarOverlay').classList.toggle('hidden'); };
         window.setViewMode = (mode) => { viewMode = mode; renderApp(); };
@@ -258,10 +256,9 @@
         window.formatTime12 = (time24, pid = null) => { 
             if (!time24 || time24.trim() === '') return '--:--'; 
             if (pid === 'taraweeh') return `${time24} <span class="text-[9px] uppercase font-bold text-gray-400">Pārahs</span>`;
-            const [h, m] = time24.split(':'); let hours = parseInt(h); const suffix = hours >= 12 ? 'PM' : 'AM'; hours = hours % 12 || 12; return `${hours}:${m}<span class="text-[10px] ml-0.5 font-normal text-gray-400">${suffix}</span>`; 
+            const [h, m] = time24.split(':'); let hours = parseInt(h); const suffix = hours >= 12 ? 'PM' : 'AM'; hours = hours % 12 || 12; return `${hours}:${String(m).padStart(2,'0')}<span class="text-[10px] ml-0.5 font-normal text-gray-400">${suffix}</span>`; 
         };
 
-        // --- STATE & APP CONFIG ---
         let viewMode = 'next', currentList = 'Favorites', searchQuery = '', mosques = [], allLists = new Set(['Favorites', 'Home', 'Work']);
         let availableCities = new Set(['Hyderabad']);
         let editingTimingsId = null, currentDetailId = null, currentTimeDisplay = '', currentTargetPrayer = 'fajr';
@@ -278,7 +275,6 @@
         const auth = firebase.auth();
         const provider = new firebase.auth.GoogleAuthProvider();
 
-        // --- CORE FUNCTIONS ---
         function updateClock() {
             const now = new Date(); let hours = now.getHours(); const minutes = String(now.getMinutes()).padStart(2, '0');
             const ampm = hours >= 12 ? 'PM' : 'AM'; hours = hours % 12 || 12;
@@ -310,7 +306,7 @@
             document.getElementById('detail_name').innerText = m.name; document.getElementById('detail_area').innerText = m.area;
             document.getElementById('detail_notes').innerText = m.address || "No notes.";
             const dirBtn = document.getElementById('detail_directions'); if(m.locationLink) { dirBtn.href = m.locationLink; dirBtn.classList.remove('hidden'); } else { dirBtn.classList.add('hidden'); }
-            const timingDiv = document.getElementById('detail_timings'); timingDiv.onclick = () => window.tryAction('edit', () => openEditTiming(id));
+            const timingDiv = document.getElementById('detail_timings'); timingDiv.onclick = () => window.tryAction('edit', () => window.openEditTiming(id));
             const displayOrder = ['fajr', 'zuhr', 'jumma', 'asr', 'isha'];
             timingDiv.innerHTML = displayOrder.map(pid => {
                 const data = m.timings[pid]; const hasTime = data && data.time; const pObj = prayersList.find(p => p.id === pid);
@@ -338,22 +334,7 @@
             } 
         };
 
-        window.saveMosqueInfo = async (goToTimings = false) => {
-            const id = document.getElementById('editMosqueId').value;
-            const data = { name: document.getElementById('m_name').value, area: document.getElementById('m_area').value, city: appSettings.city, lists: Array.from(document.querySelectorAll('#listChipsContainer .list-btn.active')).map(c=>c.innerText), locationLink: document.getElementById('m_link').value, address: document.getElementById('m_notes').value };
-            if(!data.name) return alert("Name required");
-            let savedId = id; if(id) await db.collection('mosques').doc(id).update(data); else { data.order = -Date.now(); data.timings = {}; const ref = await db.collection('mosques').add(data); savedId = ref.id; }
-            showToast(); closeModal('mosqueInfoModal'); if(goToTimings) window.openEditTiming(savedId);
-        };
-
         window.openEditTiming = (id) => { editingTimingsId = id; const m = mosques.find(x => x.id === id); document.getElementById('timingModalMosqueName').innerText = m.name; document.getElementById('timingEditorContainer').innerHTML = prayersList.map(p => createTimeRow(p.id, p.name, m.timings[p.id])).join(''); document.getElementById('specialPrayersContainer').innerHTML = specialPrayersList.map(sp => createTimeRow(sp.id, sp.name, m.timings[sp.id] || {time:''}, true, sp.id === 'taraweeh' ? 'parahs' : 'time')).join(''); document.getElementById('specialPrayersContainer').classList.add('hidden'); document.getElementById('specialChevron').classList.remove('rotate-180'); document.getElementById('editTimingModal').classList.remove('hidden'); };
-
-        window.updateSidebarToggles = () => { document.getElementById('mode_ramadan').checked = appSettings.ramadan; document.getElementById('mode_eidFitr').checked = appSettings.eidFitr; document.getElementById('mode_eidAdha').checked = appSettings.eidAdha; document.getElementById('mode_qiyam').checked = appSettings.qiyam; document.getElementById('mode_lateIsha').checked = appSettings.lateIsha; };
-        window.handleLogin = () => auth.signInWithPopup(provider);
-        window.handleLogout = () => auth.signOut();
-        window.toggleTheme = () => { const isDark = document.getElementById('theme_toggle').checked; document.documentElement.classList.toggle('dark', isDark); localStorage.setItem('theme', isDark ? 'dark' : 'light'); appSettings.theme = isDark ? 'dark' : 'light'; };
-        window.toggleMode = async (key) => { if(userRole !== 'admin') { document.getElementById(`mode_${key}`).checked = !document.getElementById(`mode_${key}`).checked; return window.tryAction('admin', ()=>{}); } appSettings[key] = !appSettings[key]; await db.collection('settings').doc('global_modes').set(appSettings, {merge: true}); };
-
         window.openCityModal = () => {
             document.getElementById('citySelectionModal').classList.remove('hidden');
             const list = document.getElementById('cityListContainer'); list.innerHTML = '';
@@ -374,16 +355,27 @@
             }
         };
 
-        window.deleteMosque = async () => { if(confirm("Delete this masjid?")) { await db.collection('mosques').doc(document.getElementById('editMosqueId').value).delete(); closeModal('mosqueInfoModal'); showToast(); } };
+        window.saveMosqueInfo = async (goToTimings = false) => {
+            const id = document.getElementById('editMosqueId').value;
+            const data = { name: document.getElementById('m_name').value, area: document.getElementById('m_area').value, city: appSettings.city, lists: Array.from(document.querySelectorAll('#listChipsContainer .list-btn.active')).map(c=>c.innerText), locationLink: document.getElementById('m_link').value, address: document.getElementById('m_notes').value };
+            if(!data.name) return alert("Name required");
+            let savedId = id; if(id) await db.collection('mosques').doc(id).update(data); else { data.order = -Date.now(); data.timings = {}; const ref = await db.collection('mosques').add(data); savedId = ref.id; }
+            showToast(); closeModal('mosqueInfoModal'); if(goToTimings) window.openEditTiming(savedId);
+        };
 
         window.saveTimings = async () => {
             const m = mosques.find(x => x.id === editingTimingsId); if(!m) return; let updated = {...m.timings};
-            prayersList.forEach(p => { const el = document.getElementById(`input_${p.id}`); const fix = document.getElementById(`fix_${p.id}`); const dateInp = document.getElementById(`date_${p.id}`); if(el && el.value) updated[p.id] = { time: el.value, fixed: fix.checked, lastUpdated: dateInp && dateInp.value ? (dateInp.value + "T00:00:00Z") : new Date().toISOString() }; });
+            prayersList.forEach(p => { const el = document.getElementById(`input_${p.id}`); const fix = document.getElementById(`fix_${p.id}`); const dateInp = document.getElementById(`date_${p.id}`); if(el && el.value) updated[p.id] = { time: el.value, fixed: fix.checked, lastUpdated: dateInp && dateInp.value ? (dateInp.value + "T00:00:00Z") : (m.timings[p.id]?.lastUpdated || new Date().toISOString()) }; });
             specialPrayersList.forEach(sp => { const el = document.getElementById(`input_${sp.id}`); if(el && el.value) updated[sp.id] = { time: el.value }; });
             await db.collection('mosques').doc(editingTimingsId).update({timings: updated}); closeModal('editTimingModal'); showToast();
         };
 
+        window.deleteMosque = async () => { if(confirm("Delete this masjid?")) { await db.collection('mosques').doc(document.getElementById('editMosqueId').value).delete(); closeModal('mosqueInfoModal'); showToast(); } };
         window.moveMosque = async (id, dir) => { const idx = mosques.findIndex(m=>m.id===id); if(idx===-1) return; const tIdx = idx+dir; if(tIdx<0 || tIdx>=mosques.length) return; const m1=mosques[idx], m2=mosques[tIdx]; const o1=m1.order, o2=m2.order; await db.collection('mosques').doc(m1.id).update({order:o2}); await db.collection('mosques').doc(m2.id).update({order:o1}); };
+        window.toggleMode = async (key) => { if(userRole !== 'admin') { document.getElementById(`mode_${key}`).checked = !document.getElementById(`mode_${key}`).checked; return window.tryAction('admin', ()=>{}); } appSettings[key] = !appSettings[key]; await db.collection('settings').doc('global_modes').set(appSettings, {merge: true}); };
+        window.toggleTheme = () => { const isDark = document.getElementById('theme_toggle').checked; document.documentElement.classList.toggle('dark', isDark); localStorage.setItem('theme', isDark ? 'dark' : 'light'); appSettings.theme = isDark ? 'dark' : 'light'; };
+        window.handleLogout = () => auth.signOut();
+        window.handleLogin = () => auth.signInWithPopup(provider);
 
         // --- RENDER LOGIC ---
         function renderApp() { renderHeader(); renderListBar(); const c = document.getElementById('mainContainer'); if(!c) return; if (viewMode === 'next') renderNextPrayerMode(c); else renderListMode(c); window.updateNavState(); }
@@ -427,11 +419,18 @@
 
         function createAdminCard(m) {
             let specHTML = '';
-            specialPrayersList.forEach(sp => { if(appSettings[sp.mode] && m.timings && m.timings[sp.id]?.time) specHTML += `<div class="flex justify-between px-2 py-1 bg-amber-50 dark:bg-amber-900/10 rounded mb-1 text-[9px] font-bold"><span class="text-amber-700">${sp.name}</span><span class="text-amber-800">${window.formatTime12(m.timings[sp.id].time, sp.id)}</span></div>`; });
+            specialPrayersList.forEach(sp => { if(appSettings[sp.mode] === true && m.timings && m.timings[sp.id]?.time) specHTML += `<div class="flex justify-between px-2 py-1 bg-amber-50 dark:bg-amber-900/10 rounded mb-1 text-[9px] font-bold"><span class="text-amber-700">${sp.name}</span><span class="text-amber-800">${window.formatTime12(m.timings[sp.id].time, sp.id)}</span></div>`; });
             return `<div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border-l-[3px] border-r-[3px] border-l-brand-500 border-r-gray-100 dark:border-r-gray-700 mb-3 animate-card"><div class="flex justify-between items-start mb-3"><div class="cursor-pointer flex items-start gap-3" onclick="openMosqueDetail('${m.id}')"><i class="fas fa-mosque text-brand-500 mt-1"></i><div><h2 class="text-sm font-bold text-gray-800 dark:text-white leading-tight">${m.name}</h2><p class="text-[10px] text-gray-400">${m.area}</p></div></div><div class="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-1"><button onclick="window.moveMosque('${m.id}',-1)" class="w-6 h-6 rounded flex items-center justify-center text-xs text-gray-400"><i class="fas fa-chevron-up"></i></button><button onclick="window.moveMosque('${m.id}',1)" class="w-6 h-6 rounded flex items-center justify-center text-xs text-gray-400"><i class="fas fa-chevron-down"></i></button><div class="w-px h-3 bg-gray-200 dark:bg-gray-600 mx-1"></div><button onclick="window.tryAction('edit',()=>window.openMosqueModal('${m.id}'))" class="w-6 h-6 text-brand-600 rounded flex items-center justify-center"><i class="fas fa-pencil-alt text-xs"></i></button></div></div><div class="grid grid-cols-5 gap-0.5 text-center border-t border-gray-50 dark:border-gray-700 pt-3 mb-3">${prayersList.map(p => {
                 const t = m.timings[p.id]?.time; if(!t) return `<div onclick="window.tryAction('edit',()=>window.openEditTiming('${m.id}'))" class="opacity-30"><div class="text-[8px] font-bold text-gray-400 mb-1 flex flex-col items-center gap-0.5 uppercase"><i class="fas ${p.icon} text-[10px]"></i> ${p.name.slice(0,3)}</div>-</div>`;
                 const [h, mins] = t.split(':'); return `<div onclick="window.tryAction('edit',()=>window.openEditTiming('${m.id}'))" class="cursor-pointer py-1"><div class="text-[8px] font-bold text-brand-500/80 mb-1 flex flex-col items-center gap-0.5 uppercase"><i class="fas ${p.icon} text-[10px]"></i> ${p.name.slice(0,3)}</div><div class="font-mono text-sm font-bold dark:text-white">${parseInt(h)%12||12}:${mins}<span class="text-[7px] block">${h>=12?'PM':'AM'}</span></div></div>`;
             }).join('')}</div><div>${specHTML}</div><div class="flex border-t border-gray-100 dark:border-gray-700 pt-2"><button onclick="document.getElementById('notes_${m.id}').classList.toggle('hidden')" class="flex-1 text-[10px] font-bold text-gray-400 uppercase">Notes <i class="fas fa-chevron-down"></i></button><a href="${m.locationLink||'#'}" target="_blank" class="flex-1 text-[10px] font-bold text-brand-600 text-center uppercase">Maps <i class="fas fa-location-arrow"></i></a></div><div id="notes_${m.id}" class="hidden bg-gray-50 dark:bg-gray-700/30 p-3 text-[10px] border-t mt-2">${m.address||'No notes.'}</div></div>`;
+        }
+
+        function updateUIForRole() {
+            const canEdit = (userRole === 'volunteer' || userRole === 'admin');
+            const isAdmin = (userRole === 'admin');
+            document.querySelectorAll('#btnAddFloating, .fa-pencil-alt, #btnDeleteMosqueHeader, #btnEditDetail').forEach(el => { el.closest('button')?.classList.toggle('restricted', !canEdit); });
+            const sCont = document.getElementById('seasonalContainer'); if(sCont) sCont.classList.toggle('restricted', !isAdmin);
         }
 
         function createTimeRow(key, name, data, isSpecial = false, type = 'time') { 
@@ -446,12 +445,10 @@
             document.documentElement.classList.toggle('dark', appSettings.theme === 'dark');
             const toggEl = document.getElementById('theme_toggle'); if(toggEl) toggEl.checked = appSettings.theme === 'dark';
             const cityEl = document.getElementById('headerCityName'); if(cityEl) cityEl.innerText = appSettings.city.toUpperCase();
-
             auth.onAuthStateChanged(async (user) => {
                 currentUser = user;
                 if (user) {
-                    document.getElementById('loginSection').classList.add('hidden');
-                    document.getElementById('authSection').classList.remove('hidden');
+                    document.getElementById('loginSection').classList.add('hidden'); document.getElementById('authSection').classList.remove('hidden');
                     document.getElementById('userPhoto').src = user.photoURL; document.getElementById('userName').innerText = user.displayName;
                     const doc = await db.collection('users').doc(user.uid).get();
                     userRole = doc.exists ? doc.data().role : 'user';
@@ -463,21 +460,12 @@
                 }
                 updateUIForRole(); loadData();
             });
-
-            db.collection('settings').doc('global_modes').onSnapshot(doc => {
-                if(doc.exists) {
-                    const d = doc.data();
-                    Object.keys(appSettings).forEach(k => { if(k!=='theme' && k!=='city' && d[k]!==undefined) appSettings[k] = d[k]; });
-                    window.updateSidebarToggles(); renderApp();
-                }
-            });
-
+            db.collection('settings').doc('global_modes').onSnapshot(doc => { if(doc.exists) { const d = doc.data(); Object.keys(appSettings).forEach(k => { if(k!=='theme' && k!=='city' && d[k]!==undefined) appSettings[k] = d[k]; }); window.updateSidebarToggles(); renderApp(); } });
             db.collection('settings').doc('locations').onSnapshot(doc => { if(doc.exists && doc.data().cities) doc.data().cities.forEach(c => availableCities.add(c)); });
             updateClock(); setInterval(updateClock, 1000);
         }
 
         function loadData() { db.collection('mosques').onSnapshot(snap => { mosques = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderApp(); }); }
-
         window.onload = init;
     </script>
 </body>
