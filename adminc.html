@@ -3,140 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jamaat Admin Console</title>
+    <title>Admin Console | Jamaat on Time</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-
     <script>
-        // CONFIG MUST MATCH MAIN APP
-        const firebaseConfig = { apiKey: "AIzaSyAEzXz42Zih7M6yY97_4e8_E1BNsjbJhnI", authDomain: "timings-ak.firebaseapp.com", projectId: "timings-ak", storageBucket: "timings-ak.firebasestorage.app", messagingSenderId: "1082790063422", appId: "1:1082790063422:web:be439e3d932475a9fe906f" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        const provider = new firebase.auth.GoogleAuthProvider();
+        // Tailwind Configuration for Dark Mode
+        tailwind.config = {
+            darkMode: 'class',
+        }
     </script>
+    <style>
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 10px; }
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
 
-    <div class="max-w-4xl mx-auto p-6">
-        <div class="flex justify-between items-center mb-8">
-            <div>
-                <h1 class="text-3xl font-bold text-teal-700">Jamaat Admin</h1>
-                <p class="text-sm text-gray-500">Manage volunteers and users</p>
+    <div class="flex min-h-screen">
+        <aside class="w-64 bg-white dark:bg-gray-800 border-r dark:border-gray-700 hidden md:block">
+            <div class="p-6">
+                <h1 class="text-xl font-bold text-emerald-600 dark:text-emerald-400">Admin Panel</h1>
+                <p class="text-xs text-gray-500">Jamaat on Time</p>
             </div>
-            <div id="authContainer">
-                <button onclick="auth.signInWithPopup(provider)" class="bg-teal-600 text-white px-4 py-2 rounded shadow hover:bg-teal-700">Login</button>
-            </div>
-        </div>
+            <nav class="mt-4 px-4 space-y-2">
+                <a href="#stats" class="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">Dashboard</a>
+                <a href="#users" class="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">User Management</a>
+                <a href="#cities" class="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">City Settings</a>
+            </nav>
+        </aside>
 
-        <div id="mainContent" class="hidden">
-            <div class="grid grid-cols-3 gap-4 mb-8">
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                    <h3 class="text-xs font-bold uppercase text-gray-400">Total Users</h3>
-                    <p class="text-2xl font-bold" id="statUsers">-</p>
+        <main class="flex-1 p-4 md:p-8">
+            <header class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-semibold">Overview</h2>
+                <div class="flex gap-4">
+                    <button onclick="toggleDarkMode()" class="p-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+                        <span id="theme-icon">🌙</span>
+                    </button>
+                    <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm">Logout</button>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                    <h3 class="text-xs font-bold uppercase text-gray-400">Volunteers</h3>
-                    <p class="text-2xl font-bold text-teal-600" id="statVols">-</p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border dark:border-gray-700">
+                    <p class="text-gray-500 text-sm">Total Volunteers</p>
+                    <p class="text-3xl font-bold" id="stat-volunteers">0</p>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                    <h3 class="text-xs font-bold uppercase text-gray-400">Total Mosques</h3>
-                    <p class="text-2xl font-bold" id="statMosques">-</p>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border dark:border-gray-700">
+                    <p class="text-gray-500 text-sm">Active Cities</p>
+                    <p class="text-3xl font-bold" id="stat-cities">0</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border dark:border-gray-700">
+                    <p class="text-gray-500 text-sm">Contribution Status</p>
+                    <span id="global-status" class="px-3 py-1 rounded-full text-xs bg-green-100 text-green-700 font-bold">ACTIVE</span>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th class="p-4 font-bold text-gray-500">User</th>
-                            <th class="p-4 font-bold text-gray-500">Role</th>
-                            <th class="p-4 font-bold text-gray-500 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="userTableBody" class="divide-y divide-gray-100">
-                        </tbody>
-                </table>
+            <div class="space-y-8">
+                
+                <section id="users" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 overflow-hidden">
+                    <div class="p-6 border-b dark:border-gray-700 flex flex-wrap justify-between items-center gap-4">
+                        <h3 class="font-bold text-lg">Add New User/Volunteer</h3>
+                        <div class="flex gap-2 w-full md:w-auto">
+                            <input type="email" id="newUserEmail" placeholder="Email address" class="flex-1 md:w-64 p-2 border rounded-lg dark:bg-gray-900 dark:border-gray-600">
+                            <select id="newUserRole" class="p-2 border rounded-lg dark:bg-gray-900 dark:border-gray-600">
+                                <option value="volunteer">Volunteer</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                            <button onclick="addUser()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg">Add</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-gray-50 dark:bg-gray-700 text-xs uppercase text-gray-500">
+                                <tr>
+                                    <th class="px-6 py-4">Email</th>
+                                    <th class="px-6 py-4">Role</th>
+                                    <th class="px-6 py-4">Status</th>
+                                    <th class="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody" class="divide-y dark:divide-gray-700">
+                                </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="cities" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
+                    <h3 class="font-bold text-lg mb-4">City Management</h3>
+                    <div class="flex gap-2 mb-6">
+                        <input type="text" id="newCityName" placeholder="Enter City Name" class="flex-1 p-2 border rounded-lg dark:bg-gray-900 dark:border-gray-600">
+                        <button onclick="addCity()" class="bg-blue-600 text-white px-6 py-2 rounded-lg">Add City</button>
+                    </div>
+                    <div id="cityList" class="flex flex-wrap gap-2">
+                        </div>
+                </section>
+
+                <section class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-6 text-center">
+                    <h3 class="font-bold text-orange-800 dark:text-orange-400 mb-2">System Emergency Pause</h3>
+                    <p class="text-sm text-orange-700 dark:text-orange-500 mb-4">Pausing contributions prevents all volunteers from editing prayer times temporarily.</p>
+                    <button id="pauseAllBtn" onclick="toggleGlobalPause()" class="bg-orange-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg">Pause All Contributions</button>
+                </section>
+
             </div>
-        </div>
-        
-        <div id="unauthorizedMsg" class="hidden text-center mt-20 text-gray-400">
-            <i class="fas fa-lock text-4xl mb-4"></i>
-            <p>You are not authorized to view this page.</p>
-        </div>
+        </main>
     </div>
 
-    <script>
-        let currentUser = null;
+    <script type="module">
+        // --- Firebase Logic (Placeholders for your actual config) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        auth.onAuthStateChanged(async (user) => {
-            currentUser = user;
-            if (user) {
-                // Check if admin
-                const doc = await db.collection('users').doc(user.uid).get();
-                const role = doc.exists ? doc.data().role : 'user';
-                
-                if (role === 'admin') {
-                    document.getElementById('mainContent').classList.remove('hidden');
-                    document.getElementById('authContainer').innerHTML = `<button onclick="auth.signOut()" class="text-sm font-bold text-red-500">Logout</button>`;
-                    loadDashboard();
-                } else {
-                    document.getElementById('unauthorizedMsg').classList.remove('hidden');
-                    document.getElementById('authContainer').innerHTML = `<button onclick="auth.signOut()" class="text-sm font-bold text-red-500">Logout</button>`;
-                }
-            } else {
-                document.getElementById('mainContent').classList.add('hidden');
-                document.getElementById('unauthorizedMsg').classList.add('hidden');
-                document.getElementById('authContainer').innerHTML = `<button onclick="auth.signInWithPopup(provider)" class="bg-teal-600 text-white px-4 py-2 rounded shadow hover:bg-teal-700">Login</button>`;
-            }
+        const db = getFirestore();
+
+        // DARK MODE TOGGLE
+        window.toggleDarkMode = () => {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            document.getElementById('theme-icon').innerText = isDark ? '☀️' : '🌙';
+        };
+
+        // 1. ADD USER/VOLUNTEER
+        window.addUser = async () => {
+            const email = document.getElementById('newUserEmail').value;
+            const role = document.getElementById('newUserRole').value;
+            if(!email) return alert("Enter email");
+            
+            await setDoc(doc(db, "users", email.toLowerCase()), {
+                email: email.toLowerCase(),
+                role: role,
+                isPaused: false
+            });
+            document.getElementById('newUserEmail').value = '';
+        };
+
+        // 2. PAUSE SPECIFIC VOLUNTEER
+        window.toggleVolunteerPause = async (email, currentStatus) => {
+            await updateDoc(doc(db, "users", email), {
+                isPaused: !currentStatus
+            });
+        };
+
+        // 3. CITY MANAGEMENT
+        window.addCity = async () => {
+            const cityName = document.getElementById('newCityName').value;
+            if(!cityName) return;
+            await setDoc(doc(db, "cities", cityName.toLowerCase()), { name: cityName });
+            document.getElementById('newCityName').value = '';
+        };
+
+        window.deleteCity = async (id) => {
+            if(confirm("Delete this city?")) await deleteDoc(doc(db, "cities", id));
+        };
+
+        // 4. GLOBAL PAUSE
+        window.toggleGlobalPause = async () => {
+            // Recommendation: Store this in a 'config/system' document
+            const statusRef = doc(db, "config", "system");
+            const currentStatus = document.getElementById('global-status').innerText === 'PAUSED';
+            await updateDoc(statusRef, { globalPause: !currentStatus });
+        };
+
+        // --- REAL-TIME LISTENERS ---
+        // (Assuming you have these collections in Firestore)
+        onSnapshot(collection(db, "users"), (snapshot) => {
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = '';
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="px-6 py-4">${data.email}</td>
+                        <td class="px-6 py-4 text-sm"><span class="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">${data.role}</span></td>
+                        <td class="px-6 py-4">
+                            ${data.isPaused ? '<span class="text-red-500 text-xs">Paused</span>' : '<span class="text-green-500 text-xs">Active</span>'}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="toggleVolunteerPause('${data.email}', ${data.isPaused})" class="text-sm text-blue-500 hover:underline">
+                                ${data.isPaused ? 'Resume' : 'Pause'}
+                            </button>
+                        </td>
+                    </tr>`;
+            });
         });
 
-        async function loadDashboard() {
-            // Stats
-            const mSnaps = await db.collection('mosques').get();
-            document.getElementById('statMosques').innerText = mSnaps.size;
-
-            db.collection('users').onSnapshot(snap => {
-                const users = [];
-                snap.forEach(doc => users.push({id: doc.id, ...doc.data()}));
-                
-                document.getElementById('statUsers').innerText = users.length;
-                document.getElementById('statVols').innerText = users.filter(u => u.role === 'volunteer').length;
-
-                const tbody = document.getElementById('userTableBody');
-                tbody.innerHTML = users.map(u => `
-                    <tr class="hover:bg-gray-50">
-                        <td class="p-4">
-                            <div class="font-bold">${u.name || 'Unknown'}</div>
-                            <div class="text-xs text-gray-400">${u.email}</div>
-                        </td>
-                        <td class="p-4">
-                            <span class="px-2 py-1 rounded text-xs font-bold uppercase ${
-                                u.role === 'admin' ? 'bg-purple-100 text-purple-600' : 
-                                u.role === 'volunteer' ? 'bg-teal-100 text-teal-600' : 'bg-gray-100 text-gray-500'
-                            }">${u.role || 'user'}</span>
-                        </td>
-                        <td class="p-4 text-right">
-                            <select onchange="updateRole('${u.id}', this.value)" class="bg-white border border-gray-300 text-xs rounded px-2 py-1 outline-none">
-                                <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
-                                <option value="volunteer" ${u.role === 'volunteer' ? 'selected' : ''}>Volunteer</option>
-                                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
-                            </select>
-                        </td>
-                    </tr>
-                `).join('');
+        onSnapshot(collection(db, "cities"), (snapshot) => {
+            const list = document.getElementById('cityList');
+            list.innerHTML = '';
+            snapshot.forEach(doc => {
+                list.innerHTML += `
+                    <div class="bg-white dark:bg-gray-700 border dark:border-gray-600 pl-4 pr-2 py-2 rounded-full flex items-center gap-3 shadow-sm">
+                        <span>${doc.data().name}</span>
+                        <button onclick="deleteCity('${doc.id}')" class="text-red-400 hover:text-red-600">×</button>
+                    </div>`;
             });
-        }
-
-        async function updateRole(uid, newRole) {
-            if(confirm(`Change role to ${newRole}?`)) {
-                await db.collection('users').doc(uid).update({ role: newRole });
-            }
-        }
+        });
     </script>
 </body>
 </html>
