@@ -685,7 +685,7 @@
         }
 
         function renderInfoMode(container) {
-            const shareMessageText = `السلام عليكم ورحمة الله وبركاته 🌙
+            const shareMessage = encodeURIComponent(`السلام عليكم ورحمة الله وبركاته 🌙
 
 🌙 This Ramadān, stay connected to the Masjid — on time, every time.
 
@@ -708,9 +708,7 @@ https://t.me/+cjZjOMlnINUxMmU1
 If you find it beneficial, please share it with your family and friends — may it be a means of khayr for all of us.
 
 جزاك الله خيرًا
-والسلام عليكم ورحمة الله وبركاته 🌿`;
-
-    const encodedMessage = encodeURIComponent(shareMessageText);
+والسلام عليكم ورحمة الله وبركاته 🌿`);
             
             container.innerHTML = `
                 <div class="animate-card max-w-sm mx-auto pt-6 space-y-8 pb-10">
@@ -725,36 +723,33 @@ If you find it beneficial, please share it with your family and friends — may 
                     <div class="space-y-3">
                         <h3 class="text-[10px] font-bold uppercase text-gray-400 tracking-widest ml-1">Frequently Asked Questions</h3>
                         
-                        ${createFAQItem("Why are there no Maghrib timings?", "Maghrib timings are usually the same in all the masājid around us, around sunset, and is not difficult for most people to be reminded. Hence for simplicity of the app, we haven't included them. The purpose of this app is not to show starting and ending times of various salāhs (there are many other good apps for that), but to compile & show the jamāʿah times in various local masājid in your city.")}
+                        ${createFAQItem("Why are there no Maghrib timings?", "Maghrib timings are usually the same in all the masājid around us, around sunset, and is not difficult for most people to be reminded. Hence for simplicity of the app, we haven't included them. The purpose of this app is not to show starting and ending times of various salāhs (there are many other good apps for that), but to compile & show the jamāʿah times in various local masājid.")}
                         
                         ${createFAQItem("My nearby masjid timings are missing, what to do?", 'You can contribute to our timings database via our <a href="https://t.me/+cjZjOMlnINUxMmU1" target="_blank" class="text-brand-600 underline">Telegram group</a>.')}
 
-                        ${createFAQItem("How do I install this app?", "On Android, just open the sidebar of this web app, and click on 'Install App', and drag the icon to your home screen. Or select 'Add to Home Screen' in yor browser menu. On iOS, click share from your browser, the select 'Add to Home Screen'. You can also simply bookmark this page or visit it from your browser by searching for 'Jamaat on Time'")}
+                        ${createFAQItem("How do I install this app?", "On Android, just open the sidebar of this web app, and click on 'Install App', and drag the icon to your home screen. Or select 'Add to Home Screen' in yor browser menu. On iOS, click share from your browser, the select 'Add to Home Screen'.")}
                         
-                        ${createFAQItem("How reliable are these timings?", "These rely on contributions by volunteers. Most of them are reliable but some may be wrong. You can report wrong timings in our <a href="https://t.me/+cjZjOMlnINUxMmU1" target="_blank" class="text-brand-600 underline">Telegram group<./a>")}
+                        ${createFAQItem("How reliable are these timings?", "These rely on contributions by volunteers. Most of them are reliable but some may be wrong. You can report wrong timings in our Telegram group.")}
                         
-                        ${createFAQItem("Who has made this app?", "Some well-wishers of the ummah, aided with the help of many volunteers has developed this. We are not professionals, hence we can make mistakes. We ask for your forgiveness in case of any mistakes, and only ask you to make duā for us.")}
+                        ${createFAQItem("Who has made this app?", "Some well-wishers of the ummah, aided with the help of many volunteers has developed this. We are not professionals, hence we can make mistakes. We ask for your forgiveness in case of any mistakes, and only ask you to make duʿāʾ for us.")}
                     </div>
 
-                    <div class="animate-card max-w-sm mx-auto pt-6 space-y-8 pb-10">
-            <div class="space-y-3 pt-4"> 
-                <a href="https://t.me/+cjZjOMlnINUxMmU1" target="_blank" class="flex items-center justify-center gap-3 w-full py-4 bg-[#24A1DE] text-white rounded-2xl shadow-lg hover:brightness-110 transition-all">
-                    <i class="fab fa-telegram-plane text-xl"></i>
-                    <span class="text-sm font-bold uppercase tracking-wider">Join Telegram Group</span>
-                </a>
+                    <div class="pt-4">
+                        <a href="https://t.me/+cjZjOMlnINUxMmU1" target="_blank" class="flex items-center justify-center gap-3 w-full py-4 bg-[#24A1DE] text-white rounded-2xl shadow-lg hover:brightness-110 transition-all">
+                            <i class="fab fa-telegram-plane text-xl"></i>
+                            <span class="text-sm font-bold uppercase tracking-wider">Join Telegram Group</span>
+                        </a>
+                        <a href="https://wa.me/?text=${shareMessage}" target="_blank" class="flex items-center justify-center gap-3 w-full py-4 bg-[#25D366] text-white rounded-2xl shadow-lg hover:brightness-110 transition-all">
+                            <i class="fab fa-whatsapp text-xl"></i>
+                            <span class="text-sm font-bold uppercase tracking-wider">Share on WhatsApp</span>
+                        </a>
+                    </div>
 
-                <a href="https://wa.me/?text=${encodedMessage}" target="_blank" class="flex items-center justify-center gap-3 w-full py-4 bg-[#25D366] text-white rounded-2xl shadow-lg hover:brightness-110 transition-all">
-                    <i class="fab fa-whatsapp text-xl"></i>
-                    <span class="text-sm font-bold uppercase tracking-wider">Share on WhatsApp</span>
-                </a>
-            </div>
-
-            <div class="pt-8 pb-4 text-center">
-                <p class="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">
-                    Made with <span class="text-red-400 dark:text-red-500/70 mx-0.5">♡</span> in Hyderabad, India
-                </p>
-            </div>
-        </div>
+                    <div class="pt-8 pb-4 text-center">
+                        <p class="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">
+                            Made with <span class="text-red-400 dark:text-red-500/70 mx-0.5">♡</span> in Hyderabad, India
+                        </p>
+                    </div>
                 </div>
             `;
         }
