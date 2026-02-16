@@ -103,14 +103,15 @@
 
     <script>
         // --- FIREBASE INITIALIZATION ---
-        const firebaseConfig = { 
-            apiKey: "AIzaSyAEzXz42Zih7M6yY97_4e8_E1BNsjbJhnI", 
-            authDomain: "timings-ak.firebaseapp.com", 
-            projectId: "timings-ak", 
-            storageBucket: "timings-ak.firebasestorage.app", 
-            messagingSenderId: "1082790063422", 
-            appId: "1:1082790063422:web:be439e3d932475a9fe906f" 
-        };
+        const firebaseConfig = {
+  apiKey: "AIzaSyAEzXz42Zih7M6yY97_4e8_E1BNsjbJhnI",
+  authDomain: "timings-ak.firebaseapp.com",
+  projectId: "timings-ak",
+  storageBucket: "timings-ak.firebasestorage.app",
+  messagingSenderId: "1082790063422",
+  appId: "1:1082790063422:web:be439e3d932475a9fe906f",
+  measurementId: "G-RL4173SF7K"
+};
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
