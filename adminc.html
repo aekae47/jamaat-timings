@@ -11,8 +11,38 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
+    <style>
+        /* Mobile Table Fix */
+        @media (max-width: 640px) {
+            thead { display: none; }
+            tr { 
+                display: flex; 
+                flex-direction: column; 
+                margin-bottom: 1rem; 
+                border: 1px solid #e5e7eb; 
+                border-radius: 0.75rem; 
+                background: white;
+                padding: 1rem;
+            }
+            td { 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center; 
+                padding: 0.5rem 0 !important;
+                border: none !important;
+            }
+            td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                color: #9ca3af;
+                text-transform: uppercase;
+                font-size: 0.75rem;
+            }
+            .mobile-hide-label::before { content: ""; }
+        }
+    </style>
+
     <script>
-        // CONFIG MUST MATCH MAIN APP
         const firebaseConfig = { apiKey: "AIzaSyAEzXz42Zih7M6yY97_4e8_E1BNsjbJhnI", authDomain: "timings-ak.firebaseapp.com", projectId: "timings-ak", storageBucket: "timings-ak.firebasestorage.app", messagingSenderId: "1082790063422", appId: "1:1082790063422:web:be439e3d932475a9fe906f" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
@@ -22,34 +52,34 @@
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
 
-    <div class="max-w-4xl mx-auto p-6">
-        <div class="flex justify-between items-center mb-8">
+    <div class="max-w-4xl mx-auto p-4 sm:p-6">
+        <div class="flex flex-row justify-between items-center mb-8">
             <div>
-                <h1 class="text-3xl font-bold text-teal-700">Jamaat Admin</h1>
-                <p class="text-sm text-gray-500">Manage volunteers and users</p>
+                <h1 class="text-2xl sm:text-3xl font-bold text-teal-700">Jamaat Admin</h1>
+                <p class="text-xs sm:text-sm text-gray-500">Manage volunteers and users</p>
             </div>
             <div id="authContainer">
-                <button onclick="auth.signInWithPopup(provider)" class="bg-teal-600 text-white px-4 py-2 rounded shadow hover:bg-teal-700">Login</button>
+                <button onclick="auth.signInWithPopup(provider)" class="bg-teal-600 text-white px-4 py-2 rounded-lg shadow hover:bg-teal-700 transition-colors">Login</button>
             </div>
         </div>
 
         <div id="mainContent" class="hidden">
-            <div class="grid grid-cols-3 gap-4 mb-8">
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex sm:block justify-between items-center">
                     <h3 class="text-xs font-bold uppercase text-gray-400">Total Users</h3>
-                    <p class="text-2xl font-bold" id="statUsers">-</p>
+                    <p class="text-xl sm:text-2xl font-bold" id="statUsers">-</p>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex sm:block justify-between items-center">
                     <h3 class="text-xs font-bold uppercase text-gray-400">Volunteers</h3>
-                    <p class="text-2xl font-bold text-teal-600" id="statVols">-</p>
+                    <p class="text-xl sm:text-2xl font-bold text-teal-600" id="statVols">-</p>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex sm:block justify-between items-center">
                     <h3 class="text-xs font-bold uppercase text-gray-400">Total Mosques</h3>
-                    <p class="text-2xl font-bold" id="statMosques">-</p>
+                    <p class="text-xl sm:text-2xl font-bold" id="statMosques">-</p>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="sm:bg-white sm:rounded-xl sm:shadow-sm sm:border border-gray-200 overflow-hidden">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
@@ -76,13 +106,12 @@
         auth.onAuthStateChanged(async (user) => {
             currentUser = user;
             if (user) {
-                // Check if admin
                 const doc = await db.collection('users').doc(user.uid).get();
                 const role = doc.exists ? doc.data().role : 'user';
                 
                 if (role === 'admin') {
                     document.getElementById('mainContent').classList.remove('hidden');
-                    document.getElementById('authContainer').innerHTML = `<button onclick="auth.signOut()" class="text-sm font-bold text-red-500">Logout</button>`;
+                    document.getElementById('authContainer').innerHTML = `<button onclick="auth.signOut()" class="text-sm font-bold text-red-500 bg-red-50 px-3 py-1 rounded-full">Logout</button>`;
                     loadDashboard();
                 } else {
                     document.getElementById('unauthorizedMsg').classList.remove('hidden');
@@ -96,7 +125,6 @@
         });
 
         async function loadDashboard() {
-            // Stats
             const mSnaps = await db.collection('mosques').get();
             document.getElementById('statMosques').innerText = mSnaps.size;
 
@@ -110,18 +138,20 @@
                 const tbody = document.getElementById('userTableBody');
                 tbody.innerHTML = users.map(u => `
                     <tr class="hover:bg-gray-50">
-                        <td class="p-4">
-                            <div class="font-bold">${u.name || 'Unknown'}</div>
-                            <div class="text-xs text-gray-400">${u.email}</div>
+                        <td class="p-4 mobile-hide-label" data-label="User">
+                            <div>
+                                <div class="font-bold text-gray-900">${u.name || 'Unknown'}</div>
+                                <div class="text-xs text-gray-400">${u.email}</div>
+                            </div>
                         </td>
-                        <td class="p-4">
-                            <span class="px-2 py-1 rounded text-xs font-bold uppercase ${
+                        <td class="p-4" data-label="Role">
+                            <span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${
                                 u.role === 'admin' ? 'bg-purple-100 text-purple-600' : 
                                 u.role === 'volunteer' ? 'bg-teal-100 text-teal-600' : 'bg-gray-100 text-gray-500'
                             }">${u.role || 'user'}</span>
                         </td>
-                        <td class="p-4 text-right">
-                            <select onchange="updateRole('${u.id}', this.value)" class="bg-white border border-gray-300 text-xs rounded px-2 py-1 outline-none">
+                        <td class="p-4 text-right" data-label="Change Role">
+                            <select onchange="updateRole('${u.id}', this.value)" class="bg-white border border-gray-300 text-xs rounded-lg px-2 py-2 outline-none focus:ring-2 focus:ring-teal-500">
                                 <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
                                 <option value="volunteer" ${u.role === 'volunteer' ? 'selected' : ''}>Volunteer</option>
                                 <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
