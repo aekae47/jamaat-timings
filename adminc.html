@@ -103,115 +103,121 @@
 
     <script>
         // --- FIREBASE INITIALIZATION ---
-        const firebaseConfig = {
-  apiKey: "AIzaSyAEzXz42Zih7M6yY97_4e8_E1BNsjbJhnI",
-  authDomain: "timings-ak.firebaseapp.com",
-  projectId: "timings-ak",
-  storageBucket: "timings-ak.firebasestorage.app",
-  messagingSenderId: "1082790063422",
-  appId: "1:1082790063422:web:be439e3d932475a9fe906f",
-  measurementId: "G-RL4173SF7K"
+const firebaseConfig = { 
+    apiKey: "AIzaSyAEzXz42Zih7M6yY97_4e8_E1BNsjbJhnI", 
+    authDomain: "timings-ak.firebaseapp.com", 
+    projectId: "timings-ak", 
+    storageBucket: "timings-ak.firebasestorage.app", 
+    messagingSenderId: "1082790063422", 
+    appId: "1:1082790063422:web:be439e3d932475a9fe906f" 
 };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        const provider = new firebase.auth.GoogleAuthProvider();
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+const provider = new firebase.auth.GoogleAuthProvider();
 
-        // --- AUTH LOGIC ---
-        document.getElementById('loginBtn').onclick = () => auth.signInWithPopup(provider);
-        document.getElementById('logoutBtn').onclick = () => auth.signOut().then(() => location.reload());
+// --- AUTH LOGIC ---
+document.getElementById('loginBtn').onclick = () => {
+    auth.signInWithPopup(provider).catch(err => alert(err.message));
+};
 
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                // Check if user is an admin in Firestore
-                const userDoc = await db.collection("users").doc(user.email.toLowerCase()).get();
-                if (userDoc.exists && userDoc.data().role === 'admin') {
-                    showAdminPanel(user);
-                } else {
-                    auth.signOut();
-                    document.getElementById('error-msg').classList.remove('hidden');
-                }
-            } else {
-                showLoginScreen();
-            }
+document.getElementById('logoutBtn').onclick = () => auth.signOut().then(() => location.reload());
+
+auth.onAuthStateChanged(async (user) => {
+    if (user) {
+        const userEmail = user.email.toLowerCase();
+        console.log("Logged in as:", userEmail);
+
+        // Check Firestore
+        const userRef = db.collection("users").doc(userEmail);
+        const userDoc = await userRef.get();
+
+        if (userDoc.exists && userDoc.data().role === 'admin') {
+            showAdminPanel(user);
+        } else {
+            // FALLBACK: If this is YOU and you are locked out, 
+            // you can manually set yourself as admin if the collection is empty
+            // or by checking your specific UID (optional)
+            auth.signOut();
+            document.getElementById('error-msg').innerText = `Access Denied for ${userEmail}. Ensure this email is a document ID in the 'users' collection with role: 'admin'.`;
+            document.getElementById('error-msg').classList.remove('hidden');
+        }
+    } else {
+        showLoginScreen();
+    }
+});
+
+function showAdminPanel(user) {
+    document.getElementById('login-screen').classList.add('hidden-content');
+    document.getElementById('admin-content').classList.remove('hidden-content');
+    document.getElementById('admin-email').innerText = user.email;
+    loadData();
+}
+
+function showLoginScreen() {
+    document.getElementById('login-screen').classList.remove('hidden-content');
+    document.getElementById('admin-content').classList.add('hidden-content');
+}
+
+// --- DATA LOADERS ---
+function loadData() {
+    // Users Listener
+    db.collection("users").onSnapshot(snap => {
+        const tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = '';
+        snap.forEach(doc => {
+            const u = doc.data();
+            tbody.innerHTML += `
+                <tr class="border-b dark:border-gray-700">
+                    <td class="p-4 text-sm font-medium">${u.email}</td>
+                    <td class="p-4 text-xs uppercase text-gray-400">${u.role}</td>
+                    <td class="p-4 text-right">
+                        <button onclick="toggleUserPause('${u.email}', ${u.isPaused})" class="px-3 py-1 rounded border ${u.isPaused ? 'border-green-500 text-green-500' : 'border-red-500 text-red-500'} text-[10px] font-bold">
+                            ${u.isPaused ? 'RESUME' : 'PAUSE'}
+                        </button>
+                    </td>
+                </tr>`;
         });
+    });
 
-        function showAdminPanel(user) {
-            document.getElementById('login-screen').classList.add('hidden-content');
-            document.getElementById('admin-content').classList.remove('hidden-content');
-            document.getElementById('admin-email').innerText = user.email;
-            loadData();
-        }
+    // Cities Listener
+    db.collection("cities").onSnapshot(snap => {
+        const list = document.getElementById('cityList');
+        list.innerHTML = '';
+        snap.forEach(doc => {
+            list.innerHTML += `
+                <div class="bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full flex items-center gap-2 text-sm">
+                    ${doc.data().name}
+                    <button onclick="deleteCity('${doc.id}')" class="text-red-500 font-bold">×</button>
+                </div>`;
+        });
+    });
+}
 
-        function showLoginScreen() {
-            document.getElementById('login-screen').classList.remove('hidden-content');
-            document.getElementById('admin-content').classList.add('hidden-content');
-        }
+// Global functions for buttons
+window.toggleUserPause = (email, current) => {
+    db.collection("users").doc(email).update({ isPaused: !current });
+};
 
-        // --- UTILITIES ---
-        window.toggleDarkMode = () => {
-            document.documentElement.classList.toggle('dark');
-        };
+window.deleteCity = (id) => {
+    if(confirm("Delete city?")) db.collection("cities").doc(id).delete();
+};
 
-        // --- DATABASE OPERATIONS ---
-        function loadData() {
-            // Real-time Users
-            db.collection("users").onSnapshot(snap => {
-                const tbody = document.getElementById('userTableBody');
-                tbody.innerHTML = '';
-                let vols = 0;
-                snap.forEach(doc => {
-                    const u = doc.data();
-                    if(u.role === 'volunteer') vols++;
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <td class="p-4 truncate max-w-[150px] font-medium">${u.email}</td>
-                            <td class="p-4"><span class="px-2 py-1 rounded-md text-[10px] bg-gray-100 dark:bg-gray-700 font-bold uppercase">${u.role}</span></td>
-                            <td class="p-4 text-right">
-                                <button onclick="toggleUserPause('${u.email}', ${u.isPaused})" class="text-xs font-bold ${u.isPaused ? 'text-green-500' : 'text-orange-500'}">
-                                    ${u.isPaused ? 'Resume' : 'Pause'}
-                                </button>
-                            </td>
-                        </tr>`;
-                });
-                document.getElementById('stat-volunteers').innerText = vols;
-            });
+document.getElementById('btnAddUser').onclick = async () => {
+    const email = document.getElementById('newUserEmail').value.trim().toLowerCase();
+    const role = document.getElementById('newUserRole').value;
+    if(!email) return;
+    await db.collection("users").doc(email).set({ email, role, isPaused: false });
+    document.getElementById('newUserEmail').value = '';
+};
 
-            // Real-time Cities
-            db.collection("cities").onSnapshot(snap => {
-                const list = document.getElementById('cityList');
-                list.innerHTML = '';
-                document.getElementById('stat-cities').innerText = snap.size;
-                snap.forEach(doc => {
-                    list.innerHTML += `
-                        <div class="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 rounded-full text-sm border border-emerald-100 dark:border-emerald-800">
-                            <span>${doc.data().name}</span>
-                            <button onclick="deleteCity('${doc.id}')" class="font-bold ml-1 hover:text-red-500">×</button>
-                        </div>`;
-                });
-            });
-        }
-
-        document.getElementById('btnAddUser').onclick = async () => {
-            const email = document.getElementById('newUserEmail').value.trim().toLowerCase();
-            const role = document.getElementById('newUserRole').value;
-            if(!email) return;
-            await db.collection("users").doc(email).set({ email, role, isPaused: false });
-            document.getElementById('newUserEmail').value = '';
-        };
-
-        document.getElementById('btnAddCity').onclick = async () => {
-            const name = document.getElementById('newCityName').value.trim();
-            if(!name) return;
-            await db.collection("cities").doc(name.toLowerCase()).set({ name });
-            document.getElementById('newCityName').value = '';
-        };
-
-        window.deleteCity = (id) => { if(confirm("Delete city?")) db.collection("cities").doc(id).delete(); };
-
-        window.toggleUserPause = (email, current) => {
-            db.collection("users").doc(email).update({ isPaused: !current });
-        };
+document.getElementById('btnAddCity').onclick = async () => {
+    const name = document.getElementById('newCityName').value.trim();
+    if(!name) return;
+    await db.collection("cities").doc(name.toLowerCase()).set({ name });
+    document.getElementById('newCityName').value = '';
+};
+        
     </script>
 </body>
 </html>
