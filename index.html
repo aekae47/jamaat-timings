@@ -527,24 +527,45 @@
         };
 
         window.saveTimings = async () => {
-            if (userRole !== 'volunteer' && userRole !== 'admin') return;
-            const m = mosques.find(x => x.id === editingTimingsId); if(!m) return; 
-            let updated = {...m.timings};
-            prayersList.forEach(p => { 
-                const el = document.getElementById(`input_${p.id}`); 
-                const fix = document.getElementById(`fix_${p.id}`); 
-                const dateInp = document.getElementById(`date_${p.id}`); 
-                if(el && el.value) updated[p.id] = { time: el.value, fixed: fix.checked, lastUpdated: dateInp && dateInp.value ? (dateInp.value + "T00:00:00Z") : (m.timings[p.id]?.lastUpdated || new Date().toISOString()) }; 
-                else if (el && !el.value) delete updated[p.id];
-            });
-            specialPrayersList.forEach(sp => { 
-                const el = document.getElementById(`input_${sp.id}`); 
-                if(el && el.value) updated[sp.id] = { time: el.value }; 
-                else if (el && !el.value) delete updated[sp.id];
-            });
-            await db.collection('mosques').doc(editingTimingsId).update({timings: updated}); 
-            closeModal('editTimingModal'); showToast();
-        };
+    if (userRole !== 'volunteer' && userRole !== 'admin') return;
+    const m = mosques.find(x => x.id === editingTimingsId); 
+    if(!m) return; 
+
+    let updated = {...m.timings};
+    const nowISO = new Date().toISOString(); // Current timestamp
+
+    prayersList.forEach(p => { 
+        const el = document.getElementById(`input_${p.id}`); 
+        const fix = document.getElementById(`fix_${p.id}`); 
+        const dateInp = document.getElementById(`date_${p.id}`); 
+        
+        if(el && el.value) {
+            // Logic: Use manually selected date from picker, otherwise use "now"
+            const updatedDate = (dateInp && dateInp.value) ? (dateInp.value + "T00:00:00Z") : nowISO;
+            
+            updated[p.id] = { 
+                time: el.value, 
+                fixed: fix.checked, 
+                lastUpdated: updatedDate 
+            }; 
+        } else if (el && !el.value) {
+            delete updated[p.id];
+        }
+    });
+
+    specialPrayersList.forEach(sp => { 
+        const el = document.getElementById(`input_${sp.id}`); 
+        if(el && el.value) {
+            updated[sp.id] = { time: el.value, lastUpdated: nowISO }; 
+        } else if (el && !el.value) {
+            delete updated[sp.id];
+        }
+    });
+
+    await db.collection('mosques').doc(editingTimingsId).update({timings: updated}); 
+    closeModal('editTimingModal'); 
+    showToast();
+};
 
         window.deleteMosque = async () => { if(confirm("Delete this masjid?")) { await db.collection('mosques').doc(document.getElementById('editMosqueId').value).delete(); closeModal('mosqueInfoModal'); showToast(); } };
         window.toggleSpecialPrayers = () => { const el = document.getElementById('specialPrayersContainer'); el.classList.toggle('hidden'); document.getElementById('specialChevron').classList.toggle('rotate-180'); };
