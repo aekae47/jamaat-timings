@@ -233,9 +233,15 @@
                     <p id="detail_notes" class="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed"></p>
                 </div>
             </div>
-            <div class="p-4 border-t border-gray-100 dark:border-gray-700">
-                <a id="detail_directions" href="#" target="_blank" class="flex items-center justify-center w-full bg-brand-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-brand-700"><i class="fas fa-location-arrow mr-2"></i> Directions</a>
-            </div>
+            <div class="p-4 border-t border-gray-100 dark:border-gray-700 space-y-2">
+    <button id="btnDetailAddToList" class="flex items-center justify-center w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
+        <i class="fas fa-list-ul mr-2"></i> Add to List
+    </button>
+    
+    <a id="detail_directions" href="#" target="_blank" class="flex items-center justify-center w-full bg-brand-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-brand-700">
+        <i class="fas fa-location-arrow mr-2"></i> Directions
+    </a>
+</div>
         </div>
     </div>
 
@@ -427,6 +433,15 @@
             currentDetailId = id; const m = mosques.find(x => x.id === id); if(!m) return;
             document.getElementById('detail_name').innerText = m.name; document.getElementById('detail_area').innerText = m.area;
             document.getElementById('detail_notes').innerText = m.address || "No notes.";
+
+            // Attach click event to the new modal button
+        const addToListBtn = document.getElementById('btnDetailAddToList');
+        addToListBtn.onclick = () => {
+            // Close the current detail modal so the list modal is visible/accessible
+            closeModal('mosqueDetailModal'); 
+            openPersonalListModal(id);
+        };
+            
             const dirBtn = document.getElementById('detail_directions'); if(m.locationLink) { dirBtn.href = m.locationLink; dirBtn.classList.remove('hidden'); } else { dirBtn.classList.add('hidden'); }
             const timingDiv = document.getElementById('detail_timings'); timingDiv.onclick = () => window.tryAction('edit', () => window.openEditTiming(id));
             const displayOrder = ['fajr', 'zuhr', 'jumma', 'asr', 'isha'];
