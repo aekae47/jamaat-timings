@@ -455,7 +455,7 @@
                     <span class="font-bold text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2"><i class="fas ${pObj.icon} text-xs w-4"></i> ${pObj.name}</span>
                     <div class="text-right flex flex-col items-end">
                         <span class="${hasTime ? 'font-mono text-lg font-bold text-gray-800 dark:text-white' : 'text-[10px] text-gray-400 italic'}">${hasTime ? window.formatTime12(data.time, pid) : '(Timing not entered)'}</span>
-                        ${hasTime && data.lastUpdated && !data.fixed ? `<div class="text-[8px] text-gray-300">${window.formatUpdateDate(data.lastUpdated)}</div>` : ''}
+                        ${hasTime && data.lastUpdated && !data.fixed ? `<div class="text-[8px] text-gray-400">(${window.formatUpdateDate(data.lastUpdated)})</div>` : ''}
                         ${taraweehData ? `<div class="text-[9px] font-bold text-amber-800 dark:text-amber-100 mt-1 px-2 py-0.5 rounded bg-amber-400 dark:bg-amber-600 shadow-sm">Tarāweeḥ: ${taraweehData} Pārahs</div>` : ''}
                     </div>
                 </div>`;
@@ -657,6 +657,7 @@
                         </div>
                         <div class="text-right">
                             <div class="font-mono font-bold text-lg dark:text-white">${parseInt(h)%12||12}:${mins}<span class="text-[9px] ml-1">${h>=12?'PM':'AM'}</span></div>
+${t.lastUpdated && !t.fixed ? `<div class="text-[8px] text-gray-400">(${window.formatUpdateDate(t.lastUpdated)})</div>` : ''}
                             ${idx===0?`<div class="text-[9px] font-bold ${passed?'text-gray-400':'text-brand-600 bg-brand-50 dark:bg-brand-900/40'} px-2 rounded">${rem}</div>`:''}
                         </div>
                     </div>`;
@@ -706,6 +707,7 @@
                         <div onclick="window.tryAction('edit',()=>window.openEditTiming('${m.id}'))" class="cursor-pointer py-1">
                             <div class="text-[8px] font-bold text-brand-500/80 mb-1 flex flex-col items-center gap-0.5 uppercase"><i class="fas ${p.icon} text-[10px]"></i> ${p.name.slice(0,5)}</div>
                             <div class="font-mono text-sm font-bold dark:text-white">${parseInt(h)%12||12}:${mins}<span class="text-[7px] block">${h>=12?'PM':'AM'}</span></div>
+${m.timings[p.id].lastUpdated && !m.timings[p.id].fixed ? `<div class="text-[7px] text-gray-400 mt-0.5">(${window.formatUpdateDate(m.timings[p.id].lastUpdated)})</div>` : ''}
                             ${taraweehData ? `<div class="mx-auto mt-1 px-1 py-0.5 rounded bg-amber-400 dark:bg-amber-600 text-[6px] font-bold text-amber-900 dark:text-amber-50 w-fit">${taraweehData}P</div>` : ''}
                         </div>`;
                     }).join('')}
