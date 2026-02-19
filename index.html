@@ -573,10 +573,13 @@
 
         function getFilteredAndSortedMosques() {
             let filtered = mosques.filter(m => (m.city || 'Hyderabad') === appSettings.city);
-            if (currentList !== 'All') {
-                const personalList = personalLists[currentList] || [];
-                filtered = filtered.filter(m => personalList.includes(m.id));
-            }
+            if (currentList === 'Jummah') {
+    // Show all mosques in the city that have a Jummah timing
+    filtered = filtered.filter(m => m.timings && m.timings.jumma && m.timings.jumma.time);
+} else if (currentList !== 'All') {
+    const personalList = personalLists[currentList] || [];
+    filtered = filtered.filter(m => personalList.includes(m.id));
+}
             if (searchQuery) {
                 filtered = filtered.filter(m => m.name.toLowerCase().includes(searchQuery) || m.area.toLowerCase().includes(searchQuery));
             }
@@ -627,26 +630,34 @@ container.innerHTML = listsToShow.map(list => `<button onclick="switchList('${li
 
     // SPECIAL JUMMAH VIEW
     if (currentList === 'Jummah') {
-        const jummaList = list.sort((a, b) => a.timings.jumma.time.localeCompare(b.timings.jumma.time));
+        // Sort Jummah times from earliest to latest
+        const jummaList = [...list].sort((a, b) => {
+            const timeA = a.timings?.jumma?.time || "99:99";
+            const timeB = b.timings?.jumma?.time || "99:99";
+            return timeA.localeCompare(timeB);
+        });
+
         html += `<div class="mt-4 mb-2 flex items-center gap-2 px-1"><i class="fas fa-users text-xs text-emerald-600"></i><h3 class="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">Jummah Timings</h3></div>`;
+        
         jummaList.forEach(m => {
             const t = m.timings.jumma.time;
             const [h, mins] = t.split(':');
             html += `
             <div onclick="openMosqueDetail('${m.id}')" class="flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border-l-[3px] border-emerald-600 mb-1 animate-card">
                 <div class="flex-1 mr-4 flex items-center gap-2">
-                    <i class="fas fa-mosque text-[10px] text-emerald-500/50"></i>
+                    <i class="fas fa-mosque text-[10px] text-emerald-500/30"></i>
                     <div>
                         <h4 class="font-bold text-sm dark:text-white leading-tight">${m.name}</h4>
                         <p class="font-narrow text-[9px] text-gray-400 font-medium">${m.area}</p>
                     </div>
                 </div>
                 <div class="text-right">
-                    <div class="font-mono font-bold text-lg dark:text-white text-emerald-700 dark:text-emerald-400">${parseInt(h)%12||12}:${mins}<span class="text-[9px] ml-1">${h>=12?'PM':'AM'}</span></div>
+                    <div class="font-mono font-bold text-lg text-emerald-700 dark:text-emerald-400">${parseInt(h)%12||12}:${mins}<span class="text-[9px] ml-1">${h>=12?'PM':'AM'}</span></div>
                 </div>
             </div>`;
         });
-        container.innerHTML = html;
+
+        container.innerHTML = html || `<div class="text-center mt-20 text-gray-400 text-xs font-bold uppercase tracking-widest">No Jummah timings found.</div>`;
         return; // Exit early to only show Jummah
     }
             const sequence = (function() {
