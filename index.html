@@ -653,7 +653,7 @@ container.innerHTML = listsToShow.map(list => `<button onclick="switchList('${li
                 let startKey = currentTargetPrayer === 'jumma' ? 'zuhr' : currentTargetPrayer; let idx = sequenceOrder.indexOf(startKey);
                 let seq = []; for(let i=0; i<4; i++) { let pid = sequenceOrder[(idx + i) % 4]; if (pid === 'zuhr' && new Date().getDay() === 5) pid = 'jumma'; seq.push(pid); } return seq;
             })();
-            let html = '';
+
             ['eidFitr', 'eidAdha'].forEach(eidKey => {
                 if(!appSettings[eidKey]) return;
                 const sublist = list.filter(m => m.timings[eidKey]?.time).sort((a,b) => a.timings[eidKey].time.localeCompare(b.timings[eidKey].time));
