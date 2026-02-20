@@ -131,7 +131,7 @@
                     <i class="fas fa-map-marker-alt text-[9px]"></i>
                     <span class="text-[10px] font-bold uppercase tracking-[0.2em]" id="headerCityName">HYDERABAD</span>
                 </div>
-                <div id="fridayBadge" class="hidden mt-2 bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full text-[9px] font-bold font-bold uppercase tracking-[0.15em] border border-emerald-100 dark:border-emerald-800/50 shadow-sm mx-auto w-fit">It's Friday! ✨</div>
+                <div id="fridayBadge" class="hidden mt-1 bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-3 py-0.5 rounded-full text-[9px] font-bold font-bold uppercase tracking-[0.15em] border border-emerald-100 dark:border-emerald-800/50 shadow-sm mx-auto w-fit">It's Friday! ✨</div>
             </div>
         </div>
 
@@ -606,7 +606,7 @@
             document.getElementById('headerSearchView')?.classList.toggle('hidden', isNext || isInfo); 
             // Check if it's Friday to give the header extra room
             const isFriday = new Date().getDay() === 5;
-            const nextHeight = isFriday ? '145px' : '115px';
+            const nextHeight = isFriday ? '140px' : '115px';
 
             document.getElementById('mainHeader').style.height = isNext ? nextHeight : (isInfo ? '50px' : '95px');
 
