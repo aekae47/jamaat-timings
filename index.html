@@ -117,21 +117,21 @@
         </button>
     </div>
 
-    <div class="fixed top-0 w-full z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-gray-700 h-[115px] transition-all" id="mainHeader">
+    <div class="fixed top-0 w-full z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-gray-700 transition-all h-auto min-h-[50px]" id="mainHeader">
         <div class="flex flex-col items-center justify-center pt-2 pb-1 relative h-[50px]">
             <button onclick="toggleSidebar()" class="absolute left-3 top-2.5 text-gray-500 hover:text-brand-600 w-8 h-8 flex items-center justify-center rounded-full transition-colors"><i class="fas fa-bars text-lg"></i></button>
             <h1 class="text-lg font-serif font-bold text-brand-600 dark:text-brand-400 tracking-tight">Jamaat on Time</h1>
             <p class="text-[9px] text-gray-400 font-medium -mt-0.5">by @aekae47</p>
         </div>
 
-        <div id="headerClockView" class="w-full">
+        <div id="headerClockView" class="w-full pb-2">
             <div class="flex flex-col items-center justify-center py-1 cursor-pointer" onclick="openCityModal()">
                 <div class="text-4xl font-mono font-bold text-gray-800 dark:text-white tracking-tighter leading-none flex items-baseline gap-1" id="bigClock">--:-- AM</div>
                 <div class="flex items-center gap-1.5 mt-0.5 text-gray-400 dark:text-gray-500">
                     <i class="fas fa-map-marker-alt text-[9px]"></i>
                     <span class="text-[10px] font-bold uppercase tracking-[0.2em]" id="headerCityName">HYDERABAD</span>
                 </div>
-                <div id="fridayBadge" class="hidden mt-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-0.5 rounded-full text-[9px] font-narrow font-bold uppercase tracking-[0.15em] border border-emerald-100 dark:border-emerald-800/50 shadow-sm">It's Friday! ✨</div>
+                <div id="fridayBadge" class="hidden mt-2 bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full text-[9px] font-bold font-bold uppercase tracking-[0.15em] border border-emerald-100 dark:border-emerald-800/50 shadow-sm mx-auto w-fit">It's Friday! ✨</div>
             </div>
         </div>
 
@@ -604,9 +604,16 @@
             
             document.getElementById('headerClockView')?.classList.toggle('hidden', !isNext); 
             document.getElementById('headerSearchView')?.classList.toggle('hidden', isNext || isInfo); 
-            document.getElementById('mainHeader').style.height = isNext ? '125px' : (isInfo ? '50px' : '95px');
-const wrapper = document.getElementById('scrollWrapper');
-if(wrapper) wrapper.className = isNext ? 'pt-[125px] max-w-md mx-auto px-3' : (isInfo ? 'pt-[50px] max-w-md mx-auto px-3' : 'pt-[95px] max-w-md mx-auto px-3');
+            // Check if it's Friday to give the header extra room
+            const isFriday = new Date().getDay() === 5;
+            const nextHeight = isFriday ? '135px' : '115px';
+
+            document.getElementById('mainHeader').style.height = isNext ? nextHeight : (isInfo ? '50px' : '95px');
+
+            const wrapper = document.getElementById('scrollWrapper');
+            if(wrapper) {
+                wrapper.style.paddingTop = isNext ? nextHeight : (isInfo ? '50px' : '95px');
+            }
             document.getElementById('btnAddFloating')?.classList.toggle('hidden', isNext || isInfo || (userRole !== 'volunteer' && userRole !== 'admin')); 
             document.getElementById('fridayBadge')?.classList.toggle('hidden', new Date().getDay() !== 5); 
             document.getElementById('filterBarContainer')?.classList.toggle('hidden', isInfo);
