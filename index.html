@@ -828,6 +828,11 @@ If you find it beneficial, please share it with your family and friends — may 
                         <i class="fab fa-telegram-plane text-xl"></i>
                         <span class="text-sm font-bold uppercase tracking-wider">Join Telegram Group</span>
                     </a>
+					
+					<button onclick="document.getElementById('contactModal').classList.remove('hidden')" class="flex items-center justify-center gap-3 w-full py-4 bg-gray-800 text-white rounded-2xl shadow-lg hover:brightness-110 transition-all">
+						<i class="fas fa-envelope text-xl"></i>
+						<span class="text-sm font-bold uppercase tracking-wider">Contact Us</span>
+					</button>
 
                     <a href="https://wa.me/?text=${encodedMessage}" target="_blank" class="flex items-center justify-center gap-3 w-full py-4 bg-[#25D366] text-white rounded-2xl shadow-lg hover:brightness-110 transition-all">
                         <i class="fab fa-whatsapp text-xl"></i>
@@ -909,6 +914,63 @@ If you find it beneficial, please share it with your family and friends — may 
 
         function loadData() { db.collection('mosques').onSnapshot(snap => { mosques = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderApp(); }); }
         window.onload = init;
+		
+		window.submitContactForm = async () => {
+			const name = document.getElementById('c_name').value.trim();
+			const email = document.getElementById('c_email').value.trim();
+			const message = document.getElementById('c_message').value.trim();
+			const honeypot = document.getElementById('c_honeypot').value;
+			const btn = document.getElementById('btnSubmitContact');
+		
+			if (honeypot) return; // Silent fail for bots
+			if (!message) return alert("Please enter a message.");
+		
+			btn.disabled = true;
+			btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+		
+			try {
+				await db.collection('contact_messages').add({
+					name: name || 'Anonymous',
+					email: email || 'Not provided',
+					message: message,
+					timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+					source: 'Web App'
+				});
+		
+				closeModal('contactModal');
+				// Clear fields
+				document.getElementById('c_name').value = '';
+				document.getElementById('c_email').value = '';
+				document.getElementById('c_message').value = '';
+				
+				// Custom Toast Message
+				const toast = document.getElementById('toast');
+				toast.querySelector('span').innerText = "Message sent ✓";
+				showToast();
+			} catch (e) {
+				alert("Error sending message. Please try again.");
+			} finally {
+				btn.disabled = false;
+				btn.innerText = "Send Message";
+			}
+		};
+		
+		
     </script>
+	<div id="contactModal" class="hidden fixed inset-0 z-[110] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-card">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="text-lg font-serif font-bold dark:text-white">Contact Us</h3>
+            <button onclick="closeModal('contactModal')" class="text-gray-400"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="space-y-4">
+            <input type="text" id="c_name" class="input-field" placeholder="Name (Optional)">
+            <input type="text" id="c_email" class="input-field" placeholder="Email/Phone No. (Optional)">
+            <textarea id="c_message" rows="4" class="input-field" placeholder="Your Message (Required)"></textarea>
+            <input type="text" id="c_honeypot" class="hidden">
+        </div>
+        <button onclick="submitContactForm()" id="btnSubmitContact" class="w-full mt-6 py-3 bg-brand-600 text-white rounded-xl text-sm font-bold shadow-lg uppercase">Send Message</button>
+    </div>
+</div>
 </body>
 </html>
