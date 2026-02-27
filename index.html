@@ -323,7 +323,17 @@
 
         const firebaseConfig = { apiKey: "AIzaSyAEzXz42Zih7M6yY97_4e8_E1BNsjbJhnI", authDomain: "timings-ak.firebaseapp.com", projectId: "timings-ak", storageBucket: "timings-ak.firebasestorage.app", messagingSenderId: "1082790063422", appId: "1:1082790063422:web:be439e3d932475a9fe906f" };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+const db = firebase.firestore();
+
+// Enable offline persistence for instantaneous repeat loads
+db.enablePersistence()
+    .catch((err) => {
+        if (err.code == 'failed-precondition') {
+            console.error("Multiple tabs open, persistence can only be enabled in one open tab at a time.");
+        } else if (err.code == 'unimplemented') {
+            console.error("The current browser does not support all of the features required to enable persistence.");
+        }
+    });
         const auth = firebase.auth();
         const provider = new firebase.auth.GoogleAuthProvider();
 
