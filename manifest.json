@@ -1,6 +1,6 @@
 {
   "name": "Jamaat on Time",
-  "short_name": "Jamaat",
+  "short_name": "Jamaat on Time",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
